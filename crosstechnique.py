@@ -20,7 +20,7 @@ def indexToHyperparameter(index, value_lists):
     return hyperparameter_values
 
 #MAIN FUNCTION====Uses the cross technique (Zhang, 2019) to generate the subtensors (body, arm, joint)========================
-def generateCrossComponents(eval_func, ranges_dict, metric, **kwargs):
+def generateCrossComponents(eval_func, ranges_dict, metric, ori_ranges_dict = {}, number_random_elements=0, **kwargs):
 
     # Obtain the evaluation mode for the machine learning model (prediction, probability or raw score)----------------------------------
     evaluation_mode = 'prediction'
@@ -36,6 +36,20 @@ def generateCrossComponents(eval_func, ranges_dict, metric, **kwargs):
     tensor_dimensions_list = []
     tensor_elements = 1
 
+    if (number_random_elements > 0):
+        for key in ori_ranges_dict.keys():
+            ori_info = ori_ranges_dict[key]
+            ori_value_list = None
+            if 'values' in ori_info.keys():
+                ori_value_list = ori_info['values']
+            else:
+                ori_start = float(ori_info['start'])
+                ori_end = float(ori_info['end'])
+                ori_interval = float(ori_info['interval'])
+                #print(f'DEBUG: ori_info = \n {ori_info}')
+
+                ori_value_list = np.linspace(ori_start, ori_end, int(round((ori_end-ori_start)/ori_interval, 0))+1)
+
     for key in ranges_dict.keys():
         info = ranges_dict[key]
         value_list = None
@@ -48,12 +62,43 @@ def generateCrossComponents(eval_func, ranges_dict, metric, **kwargs):
             end = float(info['end'])
             interval = float(info['interval'])
             value_list = np.linspace(start, end, int(round((end-start)/interval, 0))+1)
+        
+
+            if (number_random_elements > 0) and (len(value_list) >= number_random_elements): #here we select random values to explore
+                #to not increase the search space - remove elements at random from value_list
+                #print(f'DEBUG: at first: value_list = \n {value_list}')
+                #print(f'DEBUG: ori_value_list = \n {ori_value_list}')
+                if (len(value_list) != len(ori_value_list)) or (value_list != ori_value_list).all():
+                    for _ in range(number_random_elements):
+                        random_ablation_index = np.random.randint(0, len(value_list))
+                        #random_ablation_elem = random.choice(value_list)
+                    #print(f'DEBUG: random_ablation_elem = {value_list[random_ablation_index]}')
+                        value_list = np.delete(value_list, random_ablation_index)
+                    #print(f'DEBUG: after ablation: value_list = \n {value_list}')
+
+                    #select points from original (large) search space to explore        
+                    rand_selected_ori_values = np.random.choice(ori_value_list, size=number_random_elements, replace=False) #np.array(random.sample(sorted(ori_value_list), k=number_random_elements))
+                    #print(f'DEBUG: random values added = \n {rand_selected_ori_values}')
+
+                    value_list = np.concatenate((value_list, rand_selected_ori_values))
+                    value_list.sort()
+                    #print(f'DEBUG: newly generated value_list = \n {value_list}')
+                    #print("====================================") 
+
         # Update outer values
         hyperparameter_values[key] = value_list
+        
         if len(value_list) == 1:
             continue
+
+            
         tensor_dimensions_list.append(len(value_list))
         tensor_elements *= len(value_list)
+    #print(f'DEBUG: hyperparameter_values = \n {hyperparameter_values}')
+
+    #tensor_elements = {**tensor_elements, **ori_ten}
+
+     
 
     # Obtain the Tucker rank: if no rank is provided, the default is 1 for each dimension-------------------------------------------------
     tucker_rank_list = [1]*len(tensor_dimensions_list)
@@ -74,10 +119,24 @@ def generateCrossComponents(eval_func, ranges_dict, metric, **kwargs):
 
     # Assign to each position in the body region using result of eval_func averaged over multiple trials
     body = np.zeros(tuple(tucker_rank_list))
+    #print(f'DEBUG: hyperparameter_values = \n {hyperparameter_values}')
+    #print(f'DEBUG: body_indices = \n {body_indices}')
+    #print(f'================== DEBUG: number_random_elements = {number_random_elements} ==================') 
     for tensor_index in body_indices:
         current_hyperparameter_values = indexToHyperparameter(tensor_index, hyperparameter_values)
+        #print(f'DEBUG: tensor_index = \n {tensor_index}')
+        #print(f'DEBUG: hyperparameter_values = \n {hyperparameter_values}')
+
+        #print(f'DEBUG: current_hyperparameter_values = {current_hyperparameter_values} \n')
+        #print(f'DEBUG: tensor_index = {tensor_index} ')
+        #print(f'------- \n')
         eval_result_avg = 0
         for trial in range(eval_trials):
+            #print('_____________________________')
+            #print(f'current_hyperparameter_values = \n {current_hyperparameter_values}')
+            #print(f'metric = \n {metric}')
+            #print(f'evaluation_mode = \n {evaluation_mode}')
+            #print(f'eval_trials = \n {eval_trials}')
             eval_result_avg += eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)/eval_trials
         body[tuple(tensor_index)] = eval_result_avg
 
@@ -86,6 +145,7 @@ def generateCrossComponents(eval_func, ranges_dict, metric, **kwargs):
     joints = []
     # Find the arms and joints along each dimension
     for dimension_index in range(len(tensor_dimensions_tuple)):
+        #print(f'DEBUG: number_random_elements = {number_random_elements} dimension_index = {dimension_index} ')
         dimension_rank = tucker_rank_list[dimension_index]
         dimension_size = tensor_dimensions_tuple[dimension_index]
         truncated_rank_list = tucker_rank_list[:dimension_index] + tucker_rank_list[dimension_index+1:]
@@ -119,6 +179,10 @@ def generateCrossComponents(eval_func, ranges_dict, metric, **kwargs):
                     eval_result_avg += eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)/eval_trials
                 arm_matrix[seq, col] = eval_result_avg
             col += 1
+        
+        #print(f'---')
+        #print(f'DEBUG: arm matrix = \n {arm_matrix}')
+        #print(f'---')
 
         arms.append(arm_matrix)
         joints.append(joint_matrix)

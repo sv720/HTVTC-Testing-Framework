@@ -3,9 +3,11 @@ import os, sys
 p = os.path.abspath('..')
 sys.path.insert(1, p)
 
+import copy
+
 from trainmodels import crossValidationFunctionGenerator
 from loaddata import loadData, trainTestSplit, extractZeroOneClasses, convertZeroOne
-from finalAlgoImplementation import final_HTVTC
+from finalAlgoImplementation import final_HTVTC, exploratory_HTVTC
 import regressionmetrics
 import classificationmetrics
 
@@ -13,6 +15,7 @@ quantity = 'EXEC-TIME'
 
 task = 'regression'
 data = loadData(source='sklearn', identifier='california_housing', task=task)
+#data = loadData(source='sklearn', identifier='covertype', task=task)
 data_split = trainTestSplit(data, method = 'cross_validation')
 func = crossValidationFunctionGenerator(data_split, algorithm='knn-regression', task=task)
 metric = regressionmetrics.mae
@@ -52,8 +55,17 @@ ranges_dict = {
             'interval': 10.0,
         }
     }
+ori_ranges_dict_granular = copy.deepcopy(ranges_dict)
 
-recommended_combination, history = final_HTVTC(eval_func=func, ranges_dict=ranges_dict, metric=metric, max_completion_cycles=4)
+#changing the resolution (interval) for integer parameters
+
+for key in ori_ranges_dict_granular:
+    if 'interval' in ori_ranges_dict_granular[key]: 
+        ori_ranges_dict_granular[key]['interval'] = 1.0
+
+
+
+recommended_combination, history = exploratory_HTVTC(eval_func=func, ranges_dict=ranges_dict, ori_ranges_dict=ori_ranges_dict_granular, metric=metric, max_completion_cycles=10)
 
 #End timer/memory profiler/CPU timer
 result = None
