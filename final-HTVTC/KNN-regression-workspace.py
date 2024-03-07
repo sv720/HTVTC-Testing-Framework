@@ -1,5 +1,7 @@
 #Enable importing code from parent directory
 import os, sys
+from collections import Counter
+#import statistics
 p = os.path.abspath('..')
 sys.path.insert(1, p)
 
@@ -57,6 +59,8 @@ ranges_dict = {
     }
 ori_ranges_dict_granular = copy.deepcopy(ranges_dict)
 
+
+
 #changing the resolution (interval) for integer parameters
 
 for key in ori_ranges_dict_granular:
@@ -64,28 +68,56 @@ for key in ori_ranges_dict_granular:
         ori_ranges_dict_granular[key]['interval'] = 1.0
 
 
+random_selection_mode = 'random_in_original_range' #'from_original_list'
 
-recommended_combination, history = exploratory_HTVTC(eval_func=func, ranges_dict=ranges_dict, ori_ranges_dict=ori_ranges_dict_granular, metric=metric, max_completion_cycles=10)
+max_completion_cycles = 2
+number_random_elements = 5
 
-#End timer/memory profiler/CPU timer
-result = None
-if quantity == 'EXEC-TIME':
-    end_time = time.perf_counter_ns()
-    result = end_time - start_time
-elif quantity == 'CPU-TIME':
-    end_time = time.process_time_ns()
-    result = end_time - start_time
-elif quantity == 'MAX-MEMORY':
-    _, result = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
+number_experiments = 5
 
-#Recreate cross-validation generator
-data_split = trainTestSplit(data, method = 'cross_validation')
-#Find the true loss for the selcted combination
-truefunc = crossValidationFunctionGenerator(data_split, algorithm='knn-regression', task=task)    
-true_value = truefunc(metric=metric, **recommended_combination)
+#print(f'==================== DEBUG: Running exploratory_HTVTC ====================')
 
-print(f'hyperparameters: {recommended_combination}')
-print(f'history: {history}')
-print(f'True value: {true_value}')
-print(f'{quantity}: {result}')
+for max_completion_cycles in range(2,11):
+    for number_random_elements in range(1,6):
+        true_values = []
+        recommended_combinations = []
+        for exp_n in range(1, number_experiments):
+            ranges_dict_copy = copy.deepcopy(ranges_dict)
+            recommended_combination, history = exploratory_HTVTC(eval_func=func, ranges_dict=ranges_dict_copy, ori_ranges_dict=ori_ranges_dict_granular, number_random_elements=number_random_elements, metric=metric, random_selection_mode=random_selection_mode, max_completion_cycles=max_completion_cycles)
+            #recommended_combination, history = final_HTVTC(eval_func=func, ranges_dict=ranges_dict, metric=metric, max_completion_cycles=2)
+
+            #End timer/memory profiler/CPU timer
+            result = None
+            if quantity == 'EXEC-TIME':
+                end_time = time.perf_counter_ns()
+                result = end_time - start_time
+            elif quantity == 'CPU-TIME':
+                end_time = time.process_time_ns()
+                result = end_time - start_time
+            elif quantity == 'MAX-MEMORY':
+                _, result = tracemalloc.get_traced_memory()
+                tracemalloc.stop()
+
+            #Recreate cross-validation generator
+            data_split = trainTestSplit(data, method = 'cross_validation')
+            #Find the true loss for the selcted combination
+            truefunc = crossValidationFunctionGenerator(data_split, algorithm='knn-regression', task=task)    
+            true_value = truefunc(metric=metric, **recommended_combination)
+
+            # print(f'hyperparameters: {recommended_combination}')
+            # print(f'history: {history}')
+            # print(f'True value: {true_value}')
+            # print(f'{quantity}: {result}')
+
+            true_values.append(true_value)
+            recommended_combinations.append(recommended_combination)
+        print(f'DEBUG: max_completion_cycles =          {max_completion_cycles}')
+        print(f'DEBUG: number_random_elements =         {number_random_elements}')
+        print(f'DEBUG: true_values = true_values mean = {sum(true_values)/len(true_values)} ')
+        dict_counter = Counter(tuple(sorted(d.items())) for d in recommended_combinations)
+        most_common_dict = dict_counter.most_common(1)[0][0]
+        print(f'DEBUG: modal hyperparams found        = {most_common_dict}')
+
+
+
+            

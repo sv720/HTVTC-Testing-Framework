@@ -4,6 +4,9 @@ import numpy as np
 import random
 import itertools
 
+#random_selection_mode = 'random_in_original_range' #'from_original_list'
+
+
 #SUPPORT FUNCTION====Convert tensor index to corresponding hyperparameter values based on range dict=============
 def indexToHyperparameter(index, value_lists):
     hyperparameter_values = {}
@@ -20,7 +23,7 @@ def indexToHyperparameter(index, value_lists):
     return hyperparameter_values
 
 #MAIN FUNCTION====Uses the cross technique (Zhang, 2019) to generate the subtensors (body, arm, joint)========================
-def generateCrossComponents(eval_func, ranges_dict, metric, ori_ranges_dict = {}, number_random_elements=0, **kwargs):
+def generateCrossComponents(eval_func, ranges_dict, metric, ori_ranges_dict = {}, number_random_elements=0, random_selection_mode = '',  **kwargs):
 
     # Obtain the evaluation mode for the machine learning model (prediction, probability or raw score)----------------------------------
     evaluation_mode = 'prediction'
@@ -66,19 +69,39 @@ def generateCrossComponents(eval_func, ranges_dict, metric, ori_ranges_dict = {}
 
             if (number_random_elements > 0) and (len(value_list) >= number_random_elements): #here we select random values to explore
                 #to not increase the search space - remove elements at random from value_list
+
+                ori_info = ori_ranges_dict[key]
+                ori_start = float(ori_info['start'])
+                ori_end = float(ori_info['end'])
+
                 #print(f'DEBUG: at first: value_list = \n {value_list}')
                 #print(f'DEBUG: ori_value_list = \n {ori_value_list}')
                 if (len(value_list) != len(ori_value_list)) or (value_list != ori_value_list).all():
+
+                    #print(f'DEBUG: ori_start = {ori_start}')
+                    #print(f'DEBUG: ori_end = {ori_end}')
+
                     for _ in range(number_random_elements):
                         random_ablation_index = np.random.randint(0, len(value_list))
                         #random_ablation_elem = random.choice(value_list)
-                    #print(f'DEBUG: random_ablation_elem = {value_list[random_ablation_index]}')
+                        #print(f'DEBUG: random_ablation_elem = {value_list[random_ablation_index]}')
                         value_list = np.delete(value_list, random_ablation_index)
-                    #print(f'DEBUG: after ablation: value_list = \n {value_list}')
+                        #print(f'DEBUG: after ablation: value_list = \n {value_list}')
 
-                    #select points from original (large) search space to explore        
-                    rand_selected_ori_values = np.random.choice(ori_value_list, size=number_random_elements, replace=False) #np.array(random.sample(sorted(ori_value_list), k=number_random_elements))
+                    #select points from original (large) search space to explore     
+                    
+                    if random_selection_mode == 'from_original_list':
+                        rand_selected_ori_values = np.random.choice(ori_value_list, size=number_random_elements, replace=False) #THIS IS TO KEEP ELEMENTS
+                    elif random_selection_mode =='random_in_original_range':
+                        rand_selected_ori_values = [random.uniform(ori_start, ori_end) for _ in range(number_random_elements)]
+                    else: 
+                        raise ValueError("random_selection_mode not set to a valid value")
+                        
+
+            
                     #print(f'DEBUG: random values added = \n {rand_selected_ori_values}')
+
+                    
 
                     value_list = np.concatenate((value_list, rand_selected_ori_values))
                     value_list.sort()

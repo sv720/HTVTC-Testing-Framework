@@ -32,8 +32,8 @@ def update_ranges_dict(ranges_dict, selected_combination, min_real_interval):
                 lower_index = max(selected_index - quarter_values, 0)
                 #If the upper index is allowed to be equal to the lower index, this would result in an empty list
                 upper_index = max( min(selected_index + quarter_values, no_values), lower_index + 1)
-                print(f'DEBUG: lower_index = {lower_index}')
-                print(f'DEBUG: upper_index = {upper_index}')
+               #print(f'DEBUG: lower_index = {lower_index}')
+               #print(f'DEBUG: upper_index = {upper_index}')
                 ranges_dict[hyperparameter]['values'] = sorted_values[lower_index:upper_index]
             else:
                 #Adjust the resolution interval by halving it without letting it fall below the minimum interval size. 
@@ -55,8 +55,8 @@ def update_ranges_dict(ranges_dict, selected_combination, min_real_interval):
                 ranges_dict[hyperparameter]['end'] = new_end
                 ranges_dict[hyperparameter]['start'] = new_start  
 
-                print(f'DEBUG: new_start = {new_start}')
-                print(f'DEBUG: new_end = {new_end}')          
+               #print(f'DEBUG: new_start = {new_start}')
+               #print(f'DEBUG: new_end = {new_end}')          
     #Return updated ranges dict.
     return ranges_dict
 
@@ -142,7 +142,7 @@ def final_HTVTC(ranges_dict, eval_func, metric, **kwargs):
     return selected_combination, history
 
 
-def exploratory_HTVTC(ranges_dict, ori_ranges_dict, eval_func, metric,  number_random_elements = 1, **kwargs):
+def exploratory_HTVTC(ranges_dict, ori_ranges_dict, eval_func, metric,  number_random_elements = 1, random_selection_mode='', **kwargs):
 
     # Deal with kwargs that are not passed into tensor generation------------------------------------------------------
     kwargskeys = kwargs.keys()
@@ -171,19 +171,19 @@ def exploratory_HTVTC(ranges_dict, ori_ranges_dict, eval_func, metric,  number_r
         #print(f'DEBUG: ori_ranges_dict = \n {ori_ranges_dict}')
         #Perform the tensor completion
         #print(f'DEBUG: ranges_dict = \n {ranges_dict}')
-        body, joints, arms = generateCrossComponents(eval_func=eval_func, ranges_dict=ranges_dict, metric=metric, eval_trials=eval_trials, ori_ranges_dict=ori_ranges_dict, number_random_elements=1,  **kwargs)       
+        body, joints, arms = generateCrossComponents(eval_func=eval_func, ranges_dict=ranges_dict, metric=metric, eval_trials=eval_trials, ori_ranges_dict=ori_ranges_dict, number_random_elements=number_random_elements, random_selection_mode=random_selection_mode,  **kwargs)       
         
         #DEBUG line to find see if valeus of BJA decomp different without exploration: 
-        body_dbg, joints_dbg, arms_dbg = generateCrossComponents(eval_func=eval_func, ranges_dict=ranges_dict, metric=metric, eval_trials=eval_trials, number_random_elements=0,  **kwargs)
+        body_no_random_elems, joints_no_random_elems, arms_no_random_elems = generateCrossComponents(eval_func=eval_func, ranges_dict=ranges_dict, metric=metric, eval_trials=eval_trials, number_random_elements=0,  **kwargs)
         """
-        print(f'DEBUG: with random points: body  = \n {(body)}')
-        print(f'DEBUG: without random points: body_dbg  = \n {(body_dbg)}')
+       #print(f'DEBUG: with random points: body  = \n {(body)}')
+       #print(f'DEBUG: without random points: body_no_random_elems  = \n {(body_no_random_elems)}')
 
-        print(f'DEBUG: with random points: joints  = \n {(joints)}')
-        print(f'DEBUG: without random points: joints_dbg  = \n {(joints_dbg)}')
+       #print(f'DEBUG: with random points: joints  = \n {(joints)}')
+       #print(f'DEBUG: without random points: joints_no_random_elems  = \n {(joints_no_random_elems)}')
 
-        print(f'DEBUG: with random points: arms = \n {(arms)}')
-        print(f'DEBUG: without random points: arms_dbg  = \n {(arms_dbg)}')
+       #print(f'DEBUG: with random points: arms = \n {(arms)}')
+       #print(f'DEBUG: without random points: arms_no_random_elems  = \n {(arms_no_random_elems)}')
         """
         #print(f'DEBUG: body = \n {np.array(body)}')
         #print(f'_____')
@@ -194,47 +194,47 @@ def exploratory_HTVTC(ranges_dict, ori_ranges_dict, eval_func, metric,  number_r
         
 
         completed_tensor = noisyReconstruction(body, joints, arms)
-        completed_tensor_dbg = noisyReconstruction(body_dbg, joints_dbg, arms_dbg)
+        completed_tensor_no_random_elems = noisyReconstruction(body_no_random_elems, joints_no_random_elems, arms_no_random_elems)
 
         
-        print(f'DEBUG: completed_tensor  = \n {(completed_tensor)}')
-        print(f'DEBUG: completed_tensor_dbg  = \n {(completed_tensor_dbg)}')
+       #print(f'DEBUG: completed_tensor  = \n {(completed_tensor)}')
+       #print(f'DEBUG: completed_tensor_no_random_elems  = \n {(completed_tensor_no_random_elems)}')
         #Find best value
         if (np.size(completed_tensor) > 1): 
-            print(f'DEBUG: np.size(completed_tensor) = {np.size(completed_tensor)}')
+           #print(f'DEBUG: np.size(completed_tensor) = {np.size(completed_tensor)}')
             bestValue = findBestValues(completed_tensor, smallest=True, number_of_values=1)
         else:    
             bestValue = completed_tensor
         if (np.size(completed_tensor) > 1):
-            bestValue_dbg = findBestValues(completed_tensor_dbg, smallest=True, number_of_values=1)
+            bestValue_no_random_elems = findBestValues(completed_tensor_no_random_elems, smallest=True, number_of_values=1)
         else:    
-            bestValue_dbg = completed_tensor_dbg
-        print(f'DEBUG: bestValue = {bestValue}')
-        print(f'DEBUG: bestValue_dbg = {bestValue_dbg}')
+            bestValue_no_random_elems = completed_tensor_no_random_elems
+        #print(f'DEBUG: bestValue = {bestValue}')
+        #print(f'DEBUG: bestValue_no_random_elems = {bestValue_no_random_elems}')
 
         #print(f'in final_HTVTC bestValue= : {bestValue}')
         index_list, value_list = bestValue['indices'], bestValue['values']
-        index_list_dbg, value_list_dbg = bestValue_dbg['indices'], bestValue_dbg['values']
+        index_list_no_random_elems, value_list_no_random_elems = bestValue_no_random_elems['indices'], bestValue_no_random_elems['values']
 
         #Obtain hyperparameter from it
         combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
-        combinations_dbg = hyperparametersFromIndices(index_list_dbg, ranges_dict, ignore_length_1=True)
+        combinations_no_random_elems = hyperparametersFromIndices(index_list_no_random_elems, ranges_dict, ignore_length_1=True)
 
-        print(f'DEBUG: combinations =  \n {combinations}')
-        print(f'DEBUG: combinations_dbg = \n {combinations_dbg}')
+        #print(f'DEBUG: combinations =  \n {combinations}')
+       #print(f'DEBUG: combinations_no_random_elems = \n {combinations_no_random_elems}')
 
 
         selected_combination = combinations[0]
-        selected_combination_dbg = combinations_dbg[0]
+        selected_combination_no_random_elems = combinations_no_random_elems[0]
 
-        print(f'DEBUG: selected_combination = {selected_combination}')
-        print(f'DEBUG: selected_combination_dbg = {selected_combination_dbg}')
+        #print(f'DEBUG: selected_combination = \t \t \t {selected_combination}')
+        #print(f'DEBUG: selected_combination_no_random_elems = \t {selected_combination_no_random_elems}')
 
 
 
         #print(f'selected_combination (i) = : {selected_combination}')
         #Add to history 
-        history.append({'combination': selected_combination_dbg, 'predicted_loss': value_list[0], 'method': 'tensor completion'})
+        history.append({'combination': selected_combination_no_random_elems, 'predicted_loss': value_list[0], 'method': 'tensor completion'})
         
         
         #print(f'combinations   : {combinations}') 
@@ -244,31 +244,34 @@ def exploratory_HTVTC(ranges_dict, ori_ranges_dict, eval_func, metric,  number_r
         
         #If below limit, perform grid search and break.
         
+        """
         if completed_tensor.size < max_size_gridsearch:
             #print("DEBUG: below completed tensor is smaller than maximum size of grid-search: making measurment ")
             #print(f'completed_tensor.size =  : {completed_tensor.size}')
             #Generate complete tensor
             full_tensor, _ = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=ranges_dict, known_fraction=1, metric=metric, eval_trials=eval_trials, **kwargs)
             #Find best value (true value: not infered)
-            bestValue_dbg = findBestValues(full_tensor, smallest=True, number_of_values=1)
-            index_list, value_list = bestValue_dbg['indices'], bestValue_dbg['values']
+            bestValue_no_random_elems = findBestValues(full_tensor, smallest=True, number_of_values=1)
+            index_list, value_list = bestValue_no_random_elems['indices'], bestValue_no_random_elems['values']
             #Obtain hyperparameter from it
-            combinations_dbg = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
+            combinations_no_random_elems = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
             selected_combination = combinations[0]
             #print(f'selected_combination (g) = : {selected_combination}')
 
             #Add to history
             history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'grid search'})
             break
+            
+        """
         
         
         #Only need to update the ranges dict if we are using it in the next loop iteration.
         if cycle_num == max_completion_cycles - 1:
             break
         
-        print(f'DEBUG: old ranges_dict= \n {ranges_dict} ')
+       #print(f'DEBUG: old ranges_dict= \n {ranges_dict} ')
         ranges_dict = update_ranges_dict(ranges_dict, selected_combination, min_interval)
-        print(f'DEBUG: new ranges_dict= \n {ranges_dict} ')
+       #print(f'DEBUG: new ranges_dict= \n {ranges_dict} ')
         #ranges_dict_rand = copy.deepcopy(ranges_dict)
         #ranges_dict_rand = update_ranges_dict(ranges_dict_rand, selected_combination, min_interval)
 #
@@ -277,7 +280,7 @@ def exploratory_HTVTC(ranges_dict, ori_ranges_dict, eval_func, metric,  number_r
 
         
     #return the optimal hyperparameter combination as decided by the algorithm-------------------------------------------
-    return selected_combination_dbg, history
+    return selected_combination, history
 
 
 import time
