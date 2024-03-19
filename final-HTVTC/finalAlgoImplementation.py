@@ -443,14 +443,21 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
         evaluation_mode = 'prediction'
 
         print(f'DEBUG: completed_tensor.size = {completed_tensor.size}')
+
+        true_value_list = []
         for i in range(len(combinations_tc_infered)):
             print(f'DEBUG: i = {i}')
             current_hyperparameter_values = combinations_tc_infered[i]
             true_value_at_coord = eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)
+            true_value_list.append(true_value_at_coord)
             print(f'DEBUG: tc_infered_value_at_coord    = {true_value_at_coord} ')
             print(f'DEBUG: true_value_at_coord          = {bestValues_TC_Infered["values"][i]} ')
 
-        selected_combination = combinations[0]
+        
+
+        index_of_best_ground_truth_value = true_value_list.index(max(true_value_list))
+
+        selected_combination = combinations_tc_infered[index_of_best_ground_truth_value]
         #print(f'DEBUG: original method: selected_combination = \n {selected_combination}')
         #Add to history 
         history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'tensor completion'})
@@ -461,6 +468,7 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
 
 
         
+        # TODO: check if this need changing with new method 
         #If below limit, perform grid search and break.
         if completed_tensor.size < max_size_gridsearch:
             print("DEBUG: below completed tensor is smaller than maximum size of grid-search: doing grid search ")
