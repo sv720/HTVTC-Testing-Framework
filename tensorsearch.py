@@ -33,6 +33,24 @@ def findBestValues(tensor, smallest=True, number_of_values=1):
         }
 #-----------------------------------------------------------------------------------------------------
 
+#Function to find sorted elements in tensor along with indices---------------------------
+def findBestValues_sort(tensor, smallest=True, number_of_values=1):
+    tensor_dimensions = tl.shape(tensor) # Obtain tensor dimensions
+    vector = tensor.flatten(order='C') # flatten tensor along increasing order of dimensions
+    # Obtain indices in flattened array
+    indices = None
+    if smallest:
+        sorted_indices = sorted(range(len(vector)), key=lambda i: vector[i])[:number_of_values]
+    else:
+        sorted_indices = sorted(range(len(vector)), key=lambda i: vector[i], reverse=True)[:number_of_values]
+    values = vector[sorted_indices] # Obtain the largest/smallest values
+    higher_dimensional_indices = [higherDimensionalIndex(index, tensor_dimensions) for index in sorted_indices]
+    return {
+        'values': values,
+        'indices': higher_dimensional_indices
+        }
+#-----------------------------------------------------------------------------------------------------
+
 
 #Sorts result of findBestValues based on key values---------------------------------------------------
 def sortHyperparameterValues(hyp_dict, reverse=False):
