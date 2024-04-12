@@ -450,8 +450,9 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
             current_hyperparameter_values = combinations_tc_infered[i]
             true_value_at_coord = eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)
             true_value_list.append(true_value_at_coord)
-            print(f'DEBUG: tc_infered_value_at_coord    = {true_value_at_coord} ')
-            print(f'DEBUG: true_value_at_coord          = {bestValues_TC_Infered["values"][i]} ')
+            print(f'DEBUG: tc_infered_value_at_coord    = {bestValues_TC_Infered["values"][i]} ')
+            print(f'DEBUG: true_value_at_coord          = {true_value_at_coord}')
+
 
         
 
@@ -566,9 +567,9 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
             current_hyperparameter_values = combinations_tc_infered[i]
             true_value_at_coord = eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)
             true_value_list.append(true_value_at_coord)
-            print(f'DEBUG: true_value_at_coord          = {true_value_at_coord} ')
             print(f'DEBUG: tc_infered_value_at_coord    = {bestValues_TC_Infered["values"][i]} ')
-
+            print(f'DEBUG: true_value_at_coord          = {true_value_at_coord} ')
+            
 
 
             if( abs(true_value_at_coord - (bestValues_TC_Infered["values"][i])) > true_value_at_coord*fraction_true_val_to_trigger_patch ): #if we have a large error: perform a grid search around the point
