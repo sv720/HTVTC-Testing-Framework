@@ -9,7 +9,7 @@ import copy
 
 from trainmodels import crossValidationFunctionGenerator
 from loaddata import loadData, trainTestSplit, extractZeroOneClasses, convertZeroOne
-from finalAlgoImplementation import final_HTVTC, exploratory_HTVTC_random_coordinates, exploratory_HTVTC_with_intermediate_ground_truth_eval, exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues
+from finalAlgoImplementation import final_HTVTC, exploratory_HTVTC_random_coordinates, exploratory_HTVTC_with_intermediate_ground_truth_eval, exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues, exploratory_HTVTC_with_intermediate_gt_on_best_val_patches
 import regressionmetrics
 import classificationmetrics
 
@@ -72,7 +72,7 @@ ranges_dict_copy_2 = copy.deepcopy(ranges_dict)
 
 #recommended_combination_ori, history_ori = final_HTVTC(eval_func=func, ranges_dict=ranges_dict_copy_2, metric=metric)
 #recommended_combination, history = exploratory_HTVTC_with_intermediate_ground_truth_eval(eval_func=func, ranges_dict=ranges_dict_copy, metric=metric, num_ground_truth_samples= number_random_elements_ground_truth, max_completion_cycles=4)
-recommended_combination, history = exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(eval_func=func, ranges_dict=ranges_dict_copy_2, metric=metric, num_best_tc_values_evaluated_at_gt=5)
+recommended_combination, history = exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(eval_func=func, ranges_dict=ranges_dict_copy_2, metric=metric, num_best_tc_values_evaluated_at_gt=5, fraction_true_val_to_trigger_patch=0.0)
 #End timer/memory profiler/CPU timer
 result = None
 if quantity == 'EXEC-TIME':

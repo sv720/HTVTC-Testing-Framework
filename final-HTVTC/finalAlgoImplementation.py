@@ -455,7 +455,7 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
 
         
 
-        index_of_best_ground_truth_value = true_value_list.index(max(true_value_list))
+        index_of_best_ground_truth_value = true_value_list.index(min(true_value_list)) #TODO: check if this shouldn't be a min (if we are working with a min)...
 
         selected_combination = combinations_tc_infered[index_of_best_ground_truth_value]
         #print(f'DEBUG: original method: selected_combination = \n {selected_combination}')
@@ -494,6 +494,189 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
         
     #return the optimal hyperparameter combination as decided by the algorithm-------------------------------------------
     return selected_combination, history
+
+
+'''
+if exploratory_HTVTC_with_intermediate_gt_on_best_val_patches, we perform as we did in exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues
+except that, when we find points amongst our best candidates that have an error that is large (0.5 times the true value at that point), we perform a grid search around that point 
+(or these points where we have large error).
+The idea here is that if there is a large difference between the true value and the value infered by TC: we need to measure again and search a patch around 
+the candidate point
+
+'''
+def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval_func, metric, num_best_tc_values_evaluated_at_gt, fraction_true_val_to_trigger_patch=0.5, **kwargs):
+
+    # Deal with kwargs that are not passed into tensor generation------------------------------------------------------
+    kwargskeys = kwargs.keys()
+    #The minimum resolution interval required for real-valued hyperparameter. For integers, the minimum is 1.
+    min_interval = 1
+    if 'min_interval' in kwargskeys:
+        min_interval = kwargs['min_interval']
+    #The maximum number of tensor completions that are needed. The algorithm may terminate before completing this many completions.
+    max_completion_cycles = 4
+    if 'max_completion_cycles' in kwargskeys:
+        max_completion_cycles = kwargs['max_completion_cycles']
+    #The maximum number of elements before a grid search can be performed. If 0, this means there will be no grid search.
+    max_size_gridsearch = 0
+    if 'max_size_gridsearch' in kwargskeys:
+        max_size_gridsearch = kwargs['max_size_gridsearch']
+    # The number of evaluations of the evaluation function needed to generate one tensor element.
+    eval_trials = 1
+    if 'eval_trials' in kwargskeys:
+        eval_trials = kwargs['eval_trials']
+
+    #Perform the repeated tensor completions----------------------------------------------------------------------------
+    history = []
+    selected_combination = None
+    for cycle_num in range(max_completion_cycles):
+        print(f' ===== in final_HTVTC cycle : {cycle_num} =====')
+        #Perform the tensor completion
+        body, joints, arms = generateCrossComponents(eval_func=eval_func, ranges_dict=ranges_dict, metric=metric, eval_trials=eval_trials, **kwargs)
+        completed_tensor = noisyReconstruction(body, joints, arms)
+        #Find best value
+        bestValue = findBestValues(completed_tensor, smallest=True, number_of_values=1)
+        bestValues_TC_Infered = findBestValues_sort(completed_tensor, smallest=True, number_of_values=num_best_tc_values_evaluated_at_gt)
+
+        #print(f'DEBUG: experiment3 method: bestValue = \n {bestValue} ')
+        #print(f'DEBUG: experiment3 method: bestValues_TC_Infered = \n {bestValues_TC_Infered} ')
+
+        #print(f'in final_HTVTC bestValue= : {bestValue}')
+        index_list, value_list = bestValue['indices'], bestValue['values']
+        index_list_tc_infered, value_lists_tc_infered = bestValues_TC_Infered['indices'], bestValues_TC_Infered['values']
+
+        # for valueCandidate in bestValues_TC_Infered:
+        #     current_hyperparameter_values = indexToHyperparameter(random_coords, hyperparameter_values)
+
+
+        #Obtain hyperparameter from it
+        combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
+        combinations_tc_infered = hyperparametersFromIndices(index_list_tc_infered, ranges_dict, ignore_length_1=True)
+        #print(f'DEBUG: combinations_dbg = \n  {combinations_tc_infered} ')
+
+        evaluation_mode = 'prediction'
+
+        print(f'DEBUG: completed_tensor.size = {completed_tensor.size}')
+
+        true_value_list = []
+        best_value_in_each_patch = []
+        combination_of_best_value_in_each_patch = []
+
+        for i in range(len(combinations_tc_infered)):
+            print(f'DEBUG: i = {i}')
+            current_hyperparameter_values = combinations_tc_infered[i]
+            true_value_at_coord = eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)
+            true_value_list.append(true_value_at_coord)
+            print(f'DEBUG: true_value_at_coord          = {true_value_at_coord} ')
+            print(f'DEBUG: tc_infered_value_at_coord    = {bestValues_TC_Infered["values"][i]} ')
+
+
+
+            if( abs(true_value_at_coord - (bestValues_TC_Infered["values"][i])) > true_value_at_coord*fraction_true_val_to_trigger_patch ): #if we have a large error: perform a grid search around the point
+                print("DEBUG: found large error at current_hyperparameter_values = \n", current_hyperparameter_values)
+                # print("DEBUG: ranges_dict = \n", ranges_dict)
+                #combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
+                # print("DEBUG: ranges_dict = \n ", ranges_dict)
+                # print("DEBUG: current_hyperparameter_values = \n ", current_hyperparameter_values)
+                intervals_dict = {}
+                for key in ranges_dict:
+                    # print("key = ", key)
+                    # print("ranges_dict[key] = ", ranges_dict[key])
+                    if 'interval' in ranges_dict[key]: 
+                        intervals_dict[key] = ranges_dict[key]['interval'] 
+                    # print("--")
+
+                # print("intervals_dict = ", intervals_dict)
+
+               
+
+                patch_ranges_dict = copy.deepcopy(ranges_dict)
+                
+                # print("DEBUG: current_hyperparameter_values \n ", current_hyperparameter_values)
+                # print("DEBUG: OLD patch_ranges_dict = \n", patch_ranges_dict)
+                for key in patch_ranges_dict:
+                    if patch_ranges_dict[key]['type'] == 'INTEGER':
+                        patch_ranges_dict[key]['start'] = max(0.01, current_hyperparameter_values[key] - patch_ranges_dict[key]['interval']/2)
+                        patch_ranges_dict[key]['end'] = max(0.01, current_hyperparameter_values[key] + patch_ranges_dict[key]['interval']/2)
+                        patch_ranges_dict[key]['interval'] = patch_ranges_dict[key]['interval']/5
+
+                # print("DEBUG: NEW patch_ranges_dict = \n", patch_ranges_dict)
+
+                full_tensor_in_patch , _ = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=patch_ranges_dict, known_fraction=1, metric=metric, eval_trials=eval_trials, **kwargs)
+             
+                print("DEBUG: full_tensor_in_patch = \n ", full_tensor_in_patch)
+
+                #Find best value (true value: not infered)
+                bestValue_in_patch = findBestValues(full_tensor_in_patch, smallest=True, number_of_values=1)
+                index_list, value_list = bestValue['indices'], bestValue_in_patch['values']
+                #Obtain hyperparameter from it
+                combinations_in_patch = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
+                selected_combination_in_patch = combinations_in_patch[0]
+                print("DEBUG: bestValue_in_patch = ", bestValue_in_patch)
+
+
+                best_value_in_each_patch.append(bestValue_in_patch)
+                combination_of_best_value_in_each_patch.append(selected_combination_in_patch)
+
+                # true_value_in_patch = eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)
+
+
+
+                print('==================')
+                
+                
+
+
+
+
+        
+
+        index_of_best_ground_truth_value = true_value_list.index(min(true_value_list)) #TODO: check if this should rly be a max and not a min?!?!
+
+        selected_combination = combinations_tc_infered[index_of_best_ground_truth_value]
+
+        #But: if we got a better value in one of the patches: we will use that value instead
+        if (min(true_value_list) > min(best_value_in_each_patch)):
+            index_best_performing_patch = best_value_in_each_patch.index(min(best_value_in_each_patch))
+            selected_combination = combination_of_best_value_in_each_patch[index_best_performing_patch]
+
+
+
+
+        #Add to history 
+        history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'tensor completion'})
+        
+        
+ 
+
+
+        
+        # TODO: check if this need changing with new method 
+        #If below limit, perform grid search and break.
+        if completed_tensor.size < max_size_gridsearch:
+            print("DEBUG: below completed tensor is smaller than maximum size of grid-search: doing grid search ")
+            #print(f'completed_tensor.size =  : {completed_tensor.size}')
+            #Generate complete tensor
+            full_tensor, _ = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=ranges_dict, known_fraction=1, metric=metric, eval_trials=eval_trials, **kwargs)
+            #Find best value (true value: not infered)
+            bestValue = findBestValues(full_tensor, smallest=True, number_of_values=1)
+            index_list, value_list = bestValue['indices'], bestValue['values']
+            #Obtain hyperparameter from it
+            combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
+            selected_combination = combinations[0]
+            #print(f'selected_combination (g) = : {selected_combination}')
+
+            #Add to history
+            history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'grid search'})
+            break
+        
+        #Only need to update the ranges dict if we are using it in the next loop iteration.
+        if cycle_num == max_completion_cycles - 1:
+            break
+        ranges_dict = update_ranges_dict(ranges_dict, selected_combination, min_interval)
+        
+    #return the optimal hyperparameter combination as decided by the algorithm-------------------------------------------
+    return selected_combination, history
+
 #Repeat of the above function that records the timestamps at the end of each cycle
 def final_HTVTC_profiling(ranges_dict, eval_func, metric, **kwargs):
 
