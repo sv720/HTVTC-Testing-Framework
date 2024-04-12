@@ -636,7 +636,7 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
         selected_combination = combinations_tc_infered[index_of_best_ground_truth_value]
 
         #But: if we got a better value in one of the patches: we will use that value instead
-        if best_value_in_each_patch:
+        if len(best_value_in_each_patch) > 0:
             if (min(true_value_list) > min(best_value_in_each_patch)):
                 print("DEBUG: a value in a patch was better than found in the best TC candidates")
                 print("DEBUG: old best value = ", min(true_value_list))
