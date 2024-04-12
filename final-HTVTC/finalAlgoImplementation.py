@@ -604,7 +604,7 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
 
                 full_tensor_in_patch , _ = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=patch_ranges_dict, known_fraction=1, metric=metric, eval_trials=eval_trials, **kwargs)
              
-                print("DEBUG: full_tensor_in_patch = \n ", full_tensor_in_patch)
+                #print("DEBUG: full_tensor_in_patch = \n ", full_tensor_in_patch)
 
                 #Find best value (true value: not infered)
                 bestValue_in_patch = findBestValues(full_tensor_in_patch, smallest=True, number_of_values=1)
@@ -637,8 +637,14 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
 
         #But: if we got a better value in one of the patches: we will use that value instead
         if (min(true_value_list) > min(best_value_in_each_patch)):
+            print("DEBUG: a value in a patch was better than found in the best TC candidates")
+            print("DEBUG: old best value = ", min(true_value_list))
+            print("DEBUG: which is with params = ", selected_combination)
+            
             index_best_performing_patch = best_value_in_each_patch.index(min(best_value_in_each_patch))
             selected_combination = combination_of_best_value_in_each_patch[index_best_performing_patch]
+            print("DEBUG: new best value = ", min(best_value_in_each_patch))
+            print("DEBUG: which is with params = ", selected_combination)
 
 
 
