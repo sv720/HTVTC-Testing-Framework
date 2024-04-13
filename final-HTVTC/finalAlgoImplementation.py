@@ -596,8 +596,8 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
                 # print("DEBUG: OLD patch_ranges_dict = \n", patch_ranges_dict)
                 for key in patch_ranges_dict:
                     if patch_ranges_dict[key]['type'] == 'INTEGER':
-                        patch_ranges_dict[key]['start'] = max(0.01, current_hyperparameter_values[key] - patch_ranges_dict[key]['interval']/2)
-                        patch_ranges_dict[key]['end'] = max(0.01, current_hyperparameter_values[key] + patch_ranges_dict[key]['interval']/2)
+                        patch_ranges_dict[key]['start'] = max(1.0, current_hyperparameter_values[key] - patch_ranges_dict[key]['interval']//2)
+                        patch_ranges_dict[key]['end'] = max(1.0, current_hyperparameter_values[key] + patch_ranges_dict[key]['interval']//2)
                         patch_ranges_dict[key]['interval'] = patch_ranges_dict[key]['interval']/5
 
                 # print("DEBUG: NEW patch_ranges_dict = \n", patch_ranges_dict)
