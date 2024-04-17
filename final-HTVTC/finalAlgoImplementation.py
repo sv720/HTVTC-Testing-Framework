@@ -615,7 +615,7 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
                 print("DEBUG: bestValue_in_patch = ", bestValue_in_patch)
 
 
-                best_value_in_each_patch.append(bestValue_in_patch)
+                best_value_in_each_patch.append(bestValue_in_patch['values'])
                 combination_of_best_value_in_each_patch.append(selected_combination_in_patch)
 
                 # true_value_in_patch = eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)
