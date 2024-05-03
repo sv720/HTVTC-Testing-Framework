@@ -109,8 +109,9 @@ def final_HTVTC(ranges_dict, eval_func, metric, **kwargs):
         combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
         selected_combination = combinations[0]
         #print(f'DEBUG: original method: selected_combination = \n {selected_combination}')
+        true_loss_at_selected_combination = eval_func(metric=metric, **selected_combination)
         #Add to history 
-        history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'tensor completion'})
+        history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'true_loss_at_selected_combination': true_loss_at_selected_combination, 'method': 'tensor completion'})
         
         
         #print(f'combinations   : {combinations}') 
@@ -460,9 +461,11 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
 
         selected_combination = combinations_tc_infered[index_of_best_ground_truth_value]
         #print(f'DEBUG: original method: selected_combination = \n {selected_combination}')
+        true_loss_at_selected_combination = eval_func(metric=metric, **selected_combination)
         #Add to history 
-        history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'tensor completion'})
+        history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'true_loss_at_selected_combination': true_loss_at_selected_combination, 'method': 'tensor completion'})
         
+
         
         #print(f'combinations   : {combinations}') 
         #print(f'combinations[0]: {combinations[0]}') 
@@ -485,7 +488,7 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
             #print(f'selected_combination (g) = : {selected_combination}')
 
             #Add to history
-            history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'grid search'})
+            history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'true_loss_at_selected_combination':'WARNING RESULT FROM GRID SEARCH - predicted_loss already true', 'method': 'grid search'})
             break
         
         #Only need to update the ranges dict if we are using it in the next loop iteration.
@@ -598,7 +601,7 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
                     if patch_ranges_dict[key]['type'] == 'INTEGER':
                         patch_ranges_dict[key]['start'] = max(1.0, current_hyperparameter_values[key] - patch_ranges_dict[key]['interval']//2)
                         patch_ranges_dict[key]['end'] = max(1.0, current_hyperparameter_values[key] + patch_ranges_dict[key]['interval']//2)
-                        patch_ranges_dict[key]['interval'] = max(1.0, patch_ranges_dict[key]['interval']//5)
+                        patch_ranges_dict[key]['interval'] = max(1.0, patch_ranges_dict[key]['interval']//2)
 
                 # print("DEBUG: NEW patch_ranges_dict = \n", patch_ranges_dict)
 
@@ -650,8 +653,9 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
 
 
 
+        true_loss_at_selected_combination = eval_func(metric=metric, **selected_combination)
         #Add to history 
-        history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'tensor completion'})
+        history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'true_loss_at_selected_combination': true_loss_at_selected_combination, 'method': 'tensor completion'})
         
         
  
@@ -674,7 +678,7 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
             #print(f'selected_combination (g) = : {selected_combination}')
 
             #Add to history
-            history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'grid search'})
+            history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'true_loss_at_selected_combination':'WARNING RESULT FROM GRID SEARCH - predicted_loss already true', 'method': 'grid search'})
             break
         
         #Only need to update the ranges dict if we are using it in the next loop iteration.
@@ -747,7 +751,7 @@ def final_HTVTC_profiling(ranges_dict, eval_func, metric, **kwargs):
             combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
             selected_combination = combinations[0]
             #Add to history
-            history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'grid search'})
+            history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'true_loss_at_selected_combination':'WARNING RESULT FROM GRID SEARCH - predicted_loss already true', 'method': 'grid search'})
             #Record timestamp
             timestamp = time.perf_counter_ns()
             time_since_start = timestamp - start_time
