@@ -611,10 +611,12 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
 
                 #Find best value (true value: not infered)
                 bestValue_in_patch = findBestValues(full_tensor_in_patch, smallest=True, number_of_values=1)
+                del full_tensor_in_patch
                 index_list, value_list = bestValue['indices'], bestValue_in_patch['values']
                 #Obtain hyperparameter from it
                 combinations_in_patch = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
                 selected_combination_in_patch = combinations_in_patch[0]
+                #del combinations_in_patch
                 print("DEBUG: bestValue_in_patch = ", bestValue_in_patch)
 
 
@@ -671,6 +673,7 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
             full_tensor, _ = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=ranges_dict, known_fraction=1, metric=metric, eval_trials=eval_trials, **kwargs)
             #Find best value (true value: not infered)
             bestValue = findBestValues(full_tensor, smallest=True, number_of_values=1)
+            del full_tensor
             index_list, value_list = bestValue['indices'], bestValue['values']
             #Obtain hyperparameter from it
             combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
