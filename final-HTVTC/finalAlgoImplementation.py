@@ -595,19 +595,19 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
 
                 patch_ranges_dict = copy.deepcopy(ranges_dict)
                 
-                # print("DEBUG: current_hyperparameter_values \n ", current_hyperparameter_values)
-                # print("DEBUG: OLD patch_ranges_dict = \n", patch_ranges_dict)
+                print("DEBUG: current_hyperparameter_values \n ", current_hyperparameter_values)
+                print("DEBUG: OLD patch_ranges_dict = \n", patch_ranges_dict)
                 for key in patch_ranges_dict:
                     if patch_ranges_dict[key]['type'] == 'INTEGER':
                         patch_ranges_dict[key]['start'] = max(1.0, current_hyperparameter_values[key] - patch_ranges_dict[key]['interval']//2)
                         patch_ranges_dict[key]['end'] = max(1.0, current_hyperparameter_values[key] + patch_ranges_dict[key]['interval']//2)
                         patch_ranges_dict[key]['interval'] = max(1.0, patch_ranges_dict[key]['interval']//2)
 
-                # print("DEBUG: NEW patch_ranges_dict = \n", patch_ranges_dict)
+                print("DEBUG: NEW patch_ranges_dict = \n", patch_ranges_dict)
 
                 full_tensor_in_patch , _ = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=patch_ranges_dict, known_fraction=1, metric=metric, eval_trials=eval_trials, **kwargs)
              
-                #print("DEBUG: full_tensor_in_patch = \n ", full_tensor_in_patch)
+                print("DEBUG: full_tensor_in_patch = \n ", full_tensor_in_patch)
 
                 #Find best value (true value: not infered)
                 bestValue_in_patch = findBestValues(full_tensor_in_patch, smallest=True, number_of_values=1)
