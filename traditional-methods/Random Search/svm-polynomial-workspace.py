@@ -38,7 +38,7 @@ def objective(trial):
     constant_term = trial.suggest_float("constant_term", 0.0, 3.1)
     degree = trial.suggest_float("degree", 0.0, 3.1)
 
-    loss = func(C=C, gamma=gamma, constant_term=constant_term, degree=degree, metric=classificationmetrics.hingeLoss)
+    loss = func(C=C, gamma=gamma, constant_term=constant_term, degree=int(degree), metric=classificationmetrics.hingeLoss)
     timestamp = time.perf_counter_ns()
     #Update best loss based on received loss value
     global best_loss
@@ -65,7 +65,7 @@ elif quantity == 'MAX-MEMORY':
 
 optuna.logging.set_verbosity(optuna.logging.FATAL)
 study = optuna.create_study(sampler=RandomSampler())
-study.optimize(objective, n_trials=100000)
+study.optimize(objective, n_trials=1000)
 
 #resource_usage = getrusage(RUSAGE_SELF)
 #End timer/memory profiler/CPU timer
@@ -83,7 +83,7 @@ elif quantity == 'MAX-MEMORY':
 print('\n\n\n')
 print(f'Number of trials: {len(study.trials)}')
 print(f'Best trial: {study.best_trial}')
-print(f'{quantity}: {result}')
+print(f'{quantity}: {result*10^(-9) } (s)')
 #print(f'Resource usage: {resource_usage}')
 
 

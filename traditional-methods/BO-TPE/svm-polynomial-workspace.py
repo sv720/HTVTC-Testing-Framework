@@ -34,7 +34,7 @@ def objective(trial):
     constant_term = trial.suggest_float("constant_term", 0.0, 3.1)
     degree = trial.suggest_float("degree", 0.0, 3.1)
     
-    return func(C=C, gamma=gamma, constant_term=constant_term, degree=degree, metric=classificationmetrics.hingeLoss)
+    return func(C=C, gamma=gamma, constant_term=constant_term, degree=int(degree), metric=classificationmetrics.hingeLoss)
 
 #Start timer/memory profiler/CPU timer
 start_time = None
@@ -49,8 +49,8 @@ elif quantity == 'MAX-MEMORY':
     tracemalloc.start()
 
 optuna.logging.set_verbosity(optuna.logging.FATAL)
-study = optuna.create_study(sampler=TPESampler())
-study.optimize(objective, n_trials=80)
+study = optuna.create_study(sampler=TPESampler(seed=1))
+study.optimize(objective, n_trials=2)
 
 #resource_usage = getrusage(RUSAGE_SELF)
 #End timer/memory profiler/CPU timer
@@ -69,4 +69,6 @@ print('\n\n\n')
 print(f'Number of trials: {len(study.trials)}')
 print(f'Best trial: {study.best_trial}')
 print(f'{quantity}: {result}')
+if quantity == 'EXEC-TIME':
+    print(f'EXEC-TIME in s : {result * (10**(-9))}')
 #print(f'Resource usage: {resource_usage}')
