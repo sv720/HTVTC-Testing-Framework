@@ -14,6 +14,8 @@ from trainmodels import crossValidationFunctionGenerator
 import regressionmetrics
 import classificationmetrics
 import time
+from optuna.samplers import TPESampler #From documentation, appears this is sampler used by default by HyperbandPruner
+#https://optuna.readthedocs.io/en/stable/reference/generated/optuna.pruners.HyperbandPruner.html
 
 #Library only applicable in linux
 #from resource import getrusage, RUSAGE_SELF
@@ -71,7 +73,8 @@ study = optuna.create_study(
         min_resource=resolution, max_resource=1, reduction_factor=2
     ),
 )
-study.optimize(objective, n_trials=40)
+study.sampler = TPESampler(seed=1)
+study.optimize(objective, n_trials=7)
 
 #resource_usage = getrusage(RUSAGE_SELF)
 #End timer/memory profiler/CPU timer
@@ -90,4 +93,6 @@ print('\n\n\n')
 print(f'Number of trials: {len(study.trials)}')
 print(f'Best trial: {study.best_trial}')
 print(f'{quantity}: {result}')
+if quantity == 'EXEC-TIME':
+    print(f'EXEC-TIME in s : {result * (10**(-9))}')
 #print(f'Resource usage: {resource_usage}')

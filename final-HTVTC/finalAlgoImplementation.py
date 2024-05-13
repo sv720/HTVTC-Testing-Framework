@@ -333,16 +333,16 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval(ranges_dict, eval_func
         
         body, joints, arms = generateCrossComponents(eval_func=eval_func, ranges_dict=ranges_dict, metric=metric, eval_trials=eval_trials, **kwargs)
         completed_tensor = noisyReconstruction_modified_experiment2(eval_func=eval_func, ranges_dict=ranges_dict, metric=metric, num_ground_truth_samples=num_ground_truth_samples, body=body, joint_matrices=joints, arm_matrices=arms)
-        print(f'DEBUG: replacement w/ ground truth after TC method: completed tensor = \n {completed_tensor} ')
+        #print(f'DEBUG: replacement w/ ground truth after TC method: completed tensor = \n {completed_tensor} ')
         #Find best value
         bestValue = findBestValues(completed_tensor, smallest=True, number_of_values=1)
-        print(f'DEBUG: replacement w/ ground truth after TC method: bestValue = \n {bestValue} ')
+        #print(f'DEBUG: replacement w/ ground truth after TC method: bestValue = \n {bestValue} ')
         #print(f'in final_HTVTC bestValue= : {bestValue}')
         index_list, value_list = bestValue['indices'], bestValue['values']
         #Obtain hyperparameter from it
         combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
         selected_combination = combinations[0]
-        print(f'DEBUG: replacement w/ ground truth after TC method: selected_combination = \n {selected_combination}')
+        #print(f'DEBUG: replacement w/ ground truth after TC method: selected_combination = \n {selected_combination}')
         #print(f'selected_combination (i) = : {selected_combination}')
         #Add to history 
         history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'tensor completion'})
@@ -599,9 +599,10 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
                 print("DEBUG: OLD patch_ranges_dict = \n", patch_ranges_dict)
                 for key in patch_ranges_dict:
                     if patch_ranges_dict[key]['type'] == 'INTEGER':
-                        patch_ranges_dict[key]['start'] = max(1.0, current_hyperparameter_values[key] - patch_ranges_dict[key]['interval']//2)
-                        patch_ranges_dict[key]['end'] = max(1.0, current_hyperparameter_values[key] + patch_ranges_dict[key]['interval']//2)
-                        patch_ranges_dict[key]['interval'] = max(1.0, patch_ranges_dict[key]['interval']//2)
+                        if key != 'min_samples_split':
+                            patch_ranges_dict[key]['start'] = max(1.0, current_hyperparameter_values[key] - patch_ranges_dict[key]['interval']//2)
+                            patch_ranges_dict[key]['end'] = max(1.0, current_hyperparameter_values[key] + patch_ranges_dict[key]['interval']//2)
+                            patch_ranges_dict[key]['interval'] = max(1.0, patch_ranges_dict[key]['interval']//2)
 
                 print("DEBUG: NEW patch_ranges_dict = \n", patch_ranges_dict)
 

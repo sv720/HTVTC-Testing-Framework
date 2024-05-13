@@ -5,7 +5,7 @@ sys.path.insert(1, p)
 
 from trainmodels import crossValidationFunctionGenerator
 from loaddata import loadData, trainTestSplit, extractZeroOneClasses, convertZeroOne
-from finalAlgoImplementation import final_HTVTC
+from finalAlgoImplementation import final_HTVTC, exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues, exploratory_HTVTC_with_intermediate_gt_on_best_val_patches
 import regressionmetrics
 import classificationmetrics
 
@@ -45,8 +45,9 @@ ranges_dict = {
         }
     }
 
-recommended_combination, history = final_HTVTC(eval_func=func, ranges_dict=ranges_dict, metric=metric, min_interval=0.25, max_completion_cycles=2)
-
+#recommended_combination, history = final_HTVTC(eval_func=func, ranges_dict=ranges_dict, metric=metric, min_interval=0.25, max_completion_cycles=2)
+#recommended_combination, history = exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(eval_func=func, ranges_dict=ranges_dict, metric=metric, min_interval=0.25, num_best_tc_values_evaluated_at_gt=5, max_completion_cycles=2)
+recommended_combination, history = exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(eval_func=func, ranges_dict=ranges_dict, metric=metric, min_interval=0.25, num_best_tc_values_evaluated_at_gt=5, fraction_true_val_to_trigger_patch=0.5, max_completion_cycles=2)
 #End timer/memory profiler/CPU timer
 result = None
 if quantity == 'EXEC-TIME':
@@ -69,3 +70,5 @@ print(f'hyperparameters: {recommended_combination}')
 print(f'history: {history}')
 print(f'True value: {true_value}')
 print(f'{quantity}: {result}')
+if quantity == 'EXEC-TIME':
+    print(f'EXEC-TIME in s : {result * (10**(-9))}')

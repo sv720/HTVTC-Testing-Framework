@@ -88,6 +88,8 @@ print('\n\n\n')
 print(f'Number of trials: {len(study.trials)}')
 print(f'Best trial: {study.best_trial}')
 print(f'{quantity}: {result}')
+if quantity == 'EXEC-TIME':
+    print(f'EXEC-TIME in s : {result * (10**(-9))}')
 #print(f'Resource usage: {resource_usage}')
 
 #Process time stamps

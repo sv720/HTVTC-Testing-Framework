@@ -91,7 +91,7 @@ bohb = BOHB(  configspace = w.get_configspace(),
               min_budget=MIN_BUDGET, max_budget=MAX_BUDGET,
               logger=logObj
            )
-res = bohb.run(n_iterations=25)
+res = bohb.run(n_iterations=14) # in first table: n_iterations=25
 
 #End timer/memory profiler/CPU timer
 quantity_result = None
@@ -120,3 +120,5 @@ print('A total of %i unique configurations were sampled.' % len(id2config.keys()
 print('A total of %i runs were executed.' % len(res.get_all_runs()))
 print('Total budget corresponds to %.1f full function evaluations.'%(sum([r.budget for r in res.get_all_runs()])/MAX_BUDGET))
 print(f'{quantity}: {quantity_result}')
+if quantity == 'EXEC-TIME':
+    print(f'EXEC-TIME in s : {quantity_result * (10**(-9))}')

@@ -19,6 +19,10 @@ from trainmodels import crossValidationFunctionGenerator
 from loaddata import loadData, trainTestSplit, extractZeroOneClasses, convertZeroOne
 import regressionmetrics
 import classificationmetrics
+import numpy as np
+import random
+random.seed(1)
+np.random.seed(1)
 
 #To hide logs
 import logging
@@ -46,6 +50,8 @@ class MyWorker(Worker):
         self.sleep_interval = sleep_interval
 
     def compute(self, config, budget, **kwargs):
+        random.seed(1)
+        np.random.seed(1)
         data_split = trainTestSplit(binary_data, method='cross_validation')
         fraction = budget/MAXVAL + 1e-3
         func = crossValidationFunctionGenerator(data_split, algorithm='knn-classification', task=task, budget_type='features', budget_fraction=fraction)
@@ -91,13 +97,17 @@ elif quantity == 'MAX-MEMORY':
     import tracemalloc
     tracemalloc.start()
 
+#print("w.get_configspace() = ", w.get_configspace())
 #Run the optimiser
 bohb = BOHB(  configspace = w.get_configspace(),
               run_id = 'knn-c', nameserver='127.0.0.1',
               min_budget=MINVAL, max_budget=MAXVAL,
               logger=logObj
            )
-res = bohb.run(n_iterations=80)
+
+#print("type(bohb) = ", type(bohb))
+#print("dir(bohb) =  ", dir(bohb))
+res = bohb.run(n_iterations=10) #80 in first table
 
 #End timer/memory profiler/CPU timer
 quantity_result = None
@@ -126,3 +136,5 @@ print('A total of %i unique configurations were sampled.' % len(id2config.keys()
 print('A total of %i runs were executed.' % len(res.get_all_runs()))
 print('Total budget corresponds to %.1f full function evaluations.'%(sum([r.budget for r in res.get_all_runs()])/MAXVAL))
 print(f'{quantity}: {quantity_result}')
+if quantity == 'EXEC-TIME':
+    print(f'EXEC-TIME in s : {quantity_result * (10**(-9))}')

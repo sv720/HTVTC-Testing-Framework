@@ -46,7 +46,7 @@ elif quantity == 'MAX-MEMORY':
 
 optuna.logging.set_verbosity(optuna.logging.FATAL)
 study = optuna.create_study(sampler=TPESampler(seed=1))
-study.optimize(objective, n_trials=50)
+study.optimize(objective, n_trials=33) #n_trials=50 in table 1
 #resource_usage = getrusage(RUSAGE_SELF)
 
 #End timer/memory profiler/CPU timer

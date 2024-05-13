@@ -64,7 +64,7 @@ elif quantity == 'MAX-MEMORY':
     tracemalloc.start()
 
 optuna.logging.set_verbosity(optuna.logging.FATAL)
-study = optuna.create_study(sampler=RandomSampler())
+study = optuna.create_study(sampler=RandomSampler(seed=1))
 study.optimize(objective, n_trials=1000)
 
 #resource_usage = getrusage(RUSAGE_SELF)
@@ -83,10 +83,12 @@ elif quantity == 'MAX-MEMORY':
 print('\n\n\n')
 print(f'Number of trials: {len(study.trials)}')
 print(f'Best trial: {study.best_trial}')
-print(f'{quantity}: {result*10^(-9) } (s)')
+print(f'{quantity}: {result}')
+if quantity == 'EXEC-TIME':
+    print(f'EXEC-TIME in s : {result * (10**(-9))}')
 #print(f'Resource usage: {resource_usage}')
 
-
+"""
 #Process time stamps
 for i in range(len(timestamps)):
     timestamps[i] -= start_time
@@ -98,3 +100,5 @@ graph_stats = {
 PATH = 'graphs/SVM-polynomial.json'
 with open(PATH, 'w') as fp:
         json.dump(graph_stats , fp)
+
+"""

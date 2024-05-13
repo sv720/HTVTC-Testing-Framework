@@ -17,7 +17,7 @@ import time
 #from resource import getrusage, RUSAGE_SELF
 
 quantity = 'EXEC-TIME'
-trials = 50
+trials = 3 # 50 in first table (3 in the second)
 pval = 1
 
 task = 'classification'
@@ -82,4 +82,6 @@ print(f'Number of trials: {trials}')
 print(f'Best params: {best_params}')
 print(f'Best score: {best_score}')
 print(f'{quantity}: {result}')
+if quantity == 'EXEC-TIME':
+    print(f'EXEC-TIME in s : {result * (10**(-9))}')
 #print(f'Resource usage: {resource_usage}')

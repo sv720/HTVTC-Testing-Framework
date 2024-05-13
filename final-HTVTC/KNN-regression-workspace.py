@@ -70,9 +70,10 @@ recommended_combinations = []
 ranges_dict_copy = copy.deepcopy(ranges_dict)
 ranges_dict_copy_2 = copy.deepcopy(ranges_dict)
 
-#recommended_combination_ori, history_ori = final_HTVTC(eval_func=func, ranges_dict=ranges_dict_copy_2, metric=metric)
-#recommended_combination, history = exploratory_HTVTC_with_intermediate_ground_truth_eval(eval_func=func, ranges_dict=ranges_dict_copy, metric=metric, num_ground_truth_samples= number_random_elements_ground_truth, max_completion_cycles=4)
-recommended_combination, history = exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(eval_func=func, ranges_dict=ranges_dict_copy_2, metric=metric, num_best_tc_values_evaluated_at_gt=5, fraction_true_val_to_trigger_patch=0.0)
+#recommended_combination, history = final_HTVTC(eval_func=func, ranges_dict=ranges_dict_copy_2, metric=metric, max_completion_cycles=4)
+# # #recommended_combination, history = exploratory_HTVTC_with_intermediate_ground_truth_eval(eval_func=func, ranges_dict=ranges_dict_copy, metric=metric, num_ground_truth_samples= 5, max_completion_cycles=4) #DON'T USE WITHOUT DOUBLE CHECKING WHAT IT IS
+#recommended_combination, history = exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(eval_func=func, ranges_dict=ranges_dict_copy_2, metric=metric, num_best_tc_values_evaluated_at_gt=5, max_completion_cycles=4)
+recommended_combination, history = exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(eval_func=func, ranges_dict=ranges_dict_copy_2, metric=metric, num_best_tc_values_evaluated_at_gt=5, fraction_true_val_to_trigger_patch=0.5, max_completion_cycles=4)
 #End timer/memory profiler/CPU timer
 result = None
 if quantity == 'EXEC-TIME':
@@ -96,7 +97,9 @@ recommended_combinations.append(recommended_combination)
 # print(f'hyperparameters: {recommended_combination}')
 # print(f'history: {history}')
 # print(f'True value: {true_value}')
-# print(f'{quantity}: {result}')
+print(f'{quantity}: {result}')
+if quantity == 'EXEC-TIME':
+    print(f'EXEC-TIME in s : {result * (10**(-9))}')
 #print(f'DEBUG: max_completion_cycles =                  {max_completion_cycles}')
 #print(f'DEBUG: number_random_elements_ground_truth =    {number_random_elements_ground_truth}')
 print(f'DEBUG: true_values = true_values mean =         {sum(true_values)/len(true_values)} ')

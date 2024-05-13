@@ -46,9 +46,9 @@ elif quantity == 'MAX-MEMORY':
     tracemalloc.start()
 
 optuna.logging.set_verbosity(optuna.logging.FATAL)
-sampler = optuna.samplers.CmaEsSampler()
+sampler = optuna.samplers.CmaEsSampler(seed=1)
 study = optuna.create_study(sampler=sampler)
-study.optimize(objective, n_trials=900)
+study.optimize(objective, n_trials=70) #900 in first report table
 
 #resource_usage = getrusage(RUSAGE_SELF)
 #End timer/memory profiler/CPU timer
@@ -67,4 +67,6 @@ print('\n\n\n')
 print(f'Number of trials: {len(study.trials)}')
 print(f'Best trial: {study.best_trial}')
 print(f'{quantity}: {result}')
+if quantity == 'EXEC-TIME':
+    print(f'EXEC-TIME in s : {result * (10**(-9))}')
 #print(f'Resource usage: {resource_usage}')

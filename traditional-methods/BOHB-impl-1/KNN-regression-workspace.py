@@ -75,3 +75,5 @@ if __name__ == '__main__':
     
     print(logs)
     print(f'{quantity}: {result}')
+    if quantity == 'EXEC-TIME':
+        print(f'EXEC-TIME in s : {result * (10**(-9))}')
