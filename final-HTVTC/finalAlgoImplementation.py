@@ -417,7 +417,7 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
     history = []
     selected_combination = None
     for cycle_num in range(max_completion_cycles):
-        print(f' ===== in final_HTVTC cycle : {cycle_num} =====')
+        #print(f' ===== in final_HTVTC cycle : {cycle_num} =====')
         #Perform the tensor completion
         body, joints, arms = generateCrossComponents(eval_func=eval_func, ranges_dict=ranges_dict, metric=metric, eval_trials=eval_trials, **kwargs)
         completed_tensor = noisyReconstruction(body, joints, arms)

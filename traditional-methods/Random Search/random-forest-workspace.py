@@ -68,8 +68,8 @@ elif quantity == 'MAX-MEMORY':
     tracemalloc.start()
 
 optuna.logging.set_verbosity(optuna.logging.FATAL)
-study = optuna.create_study(sampler=RandomSampler())
-study.optimize(objective, n_trials=10000)
+study = optuna.create_study(sampler=RandomSampler(seed=1))
+study.optimize(objective, n_trials=60) #n_trials=10000
 
 #resource_usage = getrusage(RUSAGE_SELF)
 #End timer/memory profiler/CPU timer
@@ -91,7 +91,7 @@ print(f'{quantity}: {result}')
 if quantity == 'EXEC-TIME':
     print(f'EXEC-TIME in s : {result * (10**(-9))}')
 #print(f'Resource usage: {resource_usage}')
-
+"""
 #Process time stamps
 for i in range(len(timestamps)):
     timestamps[i] -= start_time
@@ -103,3 +103,5 @@ graph_stats = {
 PATH = 'graphs/random-forest.json'
 with open(PATH, 'w') as fp:
         json.dump(graph_stats , fp)
+
+"""

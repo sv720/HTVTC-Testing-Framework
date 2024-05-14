@@ -63,9 +63,8 @@ ranges_dict = {
     }
 
 #recommended_combination, history = final_HTVTC(eval_func=func, ranges_dict=ranges_dict, metric=metric, max_completion_cycles=4, max_size_gridsearch=51)
-
-recommended_combination, history = exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(eval_func=func, ranges_dict=ranges_dict, metric=metric, max_completion_cycles=4, max_size_gridsearch=51, num_best_tc_values_evaluated_at_gt=5)
-#recommended_combination, history = exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(eval_func=func, ranges_dict=ranges_dict, metric=metric, max_completion_cycles=4, max_size_gridsearch=51, num_best_tc_values_evaluated_at_gt=5, fraction_true_val_to_trigger_patch=0.5)
+#recommended_combination, history = exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(eval_func=func, ranges_dict=ranges_dict, metric=metric, max_completion_cycles=4, max_size_gridsearch=51, num_best_tc_values_evaluated_at_gt=5)
+recommended_combination, history = exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(eval_func=func, ranges_dict=ranges_dict, metric=metric, max_completion_cycles=4, max_size_gridsearch=51, num_best_tc_values_evaluated_at_gt=5, fraction_true_val_to_trigger_patch=0.5)
 
 #End timer/memory profiler/CPU timer
 result = None
