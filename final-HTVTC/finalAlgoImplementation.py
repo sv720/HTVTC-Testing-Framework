@@ -429,7 +429,7 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
         #print(f'DEBUG: experiment3 method: bestValues_TC_Infered = \n {bestValues_TC_Infered} ')
 
         #print(f'in final_HTVTC bestValue= : {bestValue}')
-        index_list, value_list = bestValue['indices'], bestValue['values']
+        #index_list, value_list = bestValue['indices'], bestValue['values']
         index_list_tc_infered, value_lists_tc_infered = bestValues_TC_Infered['indices'], bestValues_TC_Infered['values']
 
         # for valueCandidate in bestValues_TC_Infered:
@@ -437,7 +437,7 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
 
 
         #Obtain hyperparameter from it
-        combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
+        #combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
         combinations_tc_infered = hyperparametersFromIndices(index_list_tc_infered, ranges_dict, ignore_length_1=True)
         #print(f'DEBUG: combinations_dbg = \n  {combinations_tc_infered} ')
 
@@ -460,10 +460,11 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
         index_of_best_ground_truth_value = true_value_list.index(min(true_value_list)) #TODO: check if this shouldn't be a min (if we are working with a min)...
 
         selected_combination = combinations_tc_infered[index_of_best_ground_truth_value]
+        print("DEBUG: selected_combination = ", selected_combination)
         #print(f'DEBUG: original method: selected_combination = \n {selected_combination}')
         true_loss_at_selected_combination = eval_func(metric=metric, **selected_combination)
         #Add to history 
-        history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'true_loss_at_selected_combination': true_loss_at_selected_combination, 'method': 'tensor completion'})
+        history.append({'combination': selected_combination, 'predicted_loss': value_lists_tc_infered[0], 'true_loss_at_selected_combination': true_loss_at_selected_combination, 'method': 'tensor completion'})
         
 
         
@@ -545,7 +546,7 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
         #print(f'DEBUG: experiment3 method: bestValues_TC_Infered = \n {bestValues_TC_Infered} ')
 
         #print(f'in final_HTVTC bestValue= : {bestValue}')
-        index_list, value_list = bestValue['indices'], bestValue['values']
+        #index_list, value_list = bestValue['indices'], bestValue['values']
         index_list_tc_infered, value_lists_tc_infered = bestValues_TC_Infered['indices'], bestValues_TC_Infered['values']
 
         # for valueCandidate in bestValues_TC_Infered:
@@ -553,8 +554,9 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
 
 
         #Obtain hyperparameter from it
-        combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
+        #combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
         combinations_tc_infered = hyperparametersFromIndices(index_list_tc_infered, ranges_dict, ignore_length_1=True)
+        
         #print(f'DEBUG: combinations_dbg = \n  {combinations_tc_infered} ')
 
         evaluation_mode = 'prediction'
@@ -596,7 +598,7 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
                 patch_ranges_dict = copy.deepcopy(ranges_dict)
                 
                 print("DEBUG: current_hyperparameter_values \n ", current_hyperparameter_values)
-                print("DEBUG: OLD patch_ranges_dict = \n", patch_ranges_dict)
+                #print("DEBUG: OLD patch_ranges_dict = \n", patch_ranges_dict)
                 for key in patch_ranges_dict:
                     if patch_ranges_dict[key]['type'] == 'INTEGER':
                         if key != 'min_samples_split':
@@ -604,24 +606,26 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
                             patch_ranges_dict[key]['end'] = max(1.0, current_hyperparameter_values[key] + patch_ranges_dict[key]['interval']//2)
                             patch_ranges_dict[key]['interval'] = max(1.0, patch_ranges_dict[key]['interval']//2)
 
-                print("DEBUG: NEW patch_ranges_dict = \n", patch_ranges_dict)
+                #print("DEBUG: NEW patch_ranges_dict = \n", patch_ranges_dict)
 
                 full_tensor_in_patch , _ = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=patch_ranges_dict, known_fraction=1, metric=metric, eval_trials=eval_trials, **kwargs)
              
-                print("DEBUG: full_tensor_in_patch = \n ", full_tensor_in_patch)
+                #print("DEBUG: full_tensor_in_patch = \n ", full_tensor_in_patch)
 
                 #Find best value (true value: not infered)
                 bestValue_in_patch = findBestValues(full_tensor_in_patch, smallest=True, number_of_values=1)
                 del full_tensor_in_patch
-                index_list, value_list = bestValue['indices'], bestValue_in_patch['values']
+                index_list, value_list = bestValue_in_patch['indices'], bestValue_in_patch['values']
                 #Obtain hyperparameter from it
-                combinations_in_patch = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
+                combinations_in_patch = hyperparametersFromIndices(index_list, patch_ranges_dict, ignore_length_1=True)
                 selected_combination_in_patch = combinations_in_patch[0]
                 #del combinations_in_patch
                 print("DEBUG: bestValue_in_patch = ", bestValue_in_patch)
+                print("DEBUG: hyperparametersFromIndices(bestValue_in_patch['indices'], patch_ranges_dict, ignore_length_1=True) = ", hyperparametersFromIndices(bestValue_in_patch['indices'], patch_ranges_dict, ignore_length_1=True))
 
 
                 best_value_in_each_patch.append(bestValue_in_patch['values'])
+                print("DEBUG: selected_combination_in_patch = ", selected_combination_in_patch)
                 combination_of_best_value_in_each_patch.append(selected_combination_in_patch)
 
                 # true_value_in_patch = eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)
@@ -640,6 +644,7 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
         index_of_best_ground_truth_value = true_value_list.index(min(true_value_list)) #TODO: check if this should rly be a max and not a min?!?!
 
         selected_combination = combinations_tc_infered[index_of_best_ground_truth_value]
+        print("DEBUG: BEFORE GETTING VALUE IN PATCH: selected_combination = ", selected_combination)
 
         #But: if we got a better value in one of the patches: we will use that value instead
         if len(best_value_in_each_patch) > 0:
