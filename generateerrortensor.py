@@ -4,7 +4,7 @@ import itertools
 
 #Based on provided numerical ranges for the different hyperparameters, generates an incomplete tensor with random elements set
 #to results of the evaluation function, evaluated on hyperparameters corresponding to the nonzero position
-def generateIncompleteErrorTensor(eval_func, ranges_dict, known_fraction, metric, eval_trials=5, **kwargs):
+def generateIncompleteErrorTensor(eval_func, ranges_dict, known_fraction, metric, eval_trials=5, empty_are = 'zero', **kwargs):
 
     evaluation_mode = 'prediction'
     if 'evaluation_mode' in kwargs.keys():
@@ -44,7 +44,7 @@ def generateIncompleteErrorTensor(eval_func, ranges_dict, known_fraction, metric
 
     # Randomly sample from all_indices
     sampled_indices = random.sample(all_indices, known_elements)
-
+    sampled_point_values = []
     # Populate the empty tensor
     for tensor_index in sampled_indices:
         current_hyperparameter_values = {}
@@ -60,6 +60,18 @@ def generateIncompleteErrorTensor(eval_func, ranges_dict, known_fraction, metric
         for trial in range(eval_trials):
             eval_result_avg += eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)/eval_trials
         error_tensor[tuple(tensor_index)] = eval_result_avg
+        sampled_point_values.append(eval_result_avg)
+    print("DEBUG: sparse_tensor (pre replacement of zeros with gaussian points) \n", error_tensor)
+    if empty_are == 'gaussian':
+        zero_indices = np.where(error_tensor == 0)   
+        mean = np.mean(sampled_point_values)
+        std = np.std(sampled_point_values)/len(sampled_point_values)
+        print("DEBUG: mean = ", mean)
+        print("DEBUG: std = ", std)
+        gaussian_values = np.random.normal(mean, std, size=len(zero_indices[0])) #N.B. dividing by n to get best estimate
+        error_tensor[zero_indices] = gaussian_values
+    
+
 
     #return populated tensor and indices
     return error_tensor, sampled_indices
