@@ -1,6 +1,8 @@
 import numpy as np
 import random
 import itertools
+np.random.seed(1)
+random.seed(2)
 
 #Based on provided numerical ranges for the different hyperparameters, generates an incomplete tensor with random elements set
 #to results of the evaluation function, evaluated on hyperparameters corresponding to the nonzero position

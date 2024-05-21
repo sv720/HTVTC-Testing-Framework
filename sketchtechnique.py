@@ -3,6 +3,7 @@ import numpy as np
 from tensorly.tenalg import multi_mode_dot
 from generateerrortensor import generateIncompleteErrorTensor
 from tensorly import unfold
+np.random.seed(1)
 
 def apply_random_projections(tensor, projection_matrices, skipped_index=None):
     """ Apply random projections to each mode of the tensor using multi-mode dot products """
