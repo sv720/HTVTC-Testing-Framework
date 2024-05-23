@@ -36,7 +36,7 @@ def generateIncompleteErrorTensor(eval_func, ranges_dict, known_fraction, metric
 
     tensor_dimensions_tuple = tuple(tensor_dimensions_list)
     error_tensor = np.zeros(tensor_dimensions_tuple)
-    known_elements = int(known_fraction*tensor_elements)
+    known_elements = max(1,int(known_fraction*tensor_elements))
 
     # Generate list of all possible index combinations
     value_lists = []
@@ -63,7 +63,6 @@ def generateIncompleteErrorTensor(eval_func, ranges_dict, known_fraction, metric
             eval_result_avg += eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)/eval_trials
         error_tensor[tuple(tensor_index)] = eval_result_avg
         sampled_point_values.append(eval_result_avg)
-    print("DEBUG: sparse_tensor (pre replacement of zeros with gaussian points) \n", error_tensor)
     if empty_are == 'gaussian':
         zero_indices = np.where(error_tensor == 0)   
         mean = np.mean(sampled_point_values)

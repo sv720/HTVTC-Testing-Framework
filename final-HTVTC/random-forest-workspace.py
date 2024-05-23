@@ -5,7 +5,7 @@ sys.path.insert(1, p)
 
 from trainmodels import crossValidationFunctionGenerator
 from loaddata import loadData, trainTestSplit, extractZeroOneClasses, convertZeroOne
-from finalAlgoImplementation import final_HTVTC, exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues, exploratory_HTVTC_with_intermediate_gt_on_best_val_patches
+from finalAlgoImplementation import final_HTVTC, exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues, exploratory_HTVTC_with_intermediate_gt_on_best_val_patches,final_HTVTC_TSvMRP
 import regressionmetrics
 import classificationmetrics
 
@@ -64,7 +64,8 @@ ranges_dict = {
 
 #recommended_combination, history = final_HTVTC(eval_func=func, ranges_dict=ranges_dict, metric=metric, max_completion_cycles=4, max_size_gridsearch=51)
 #recommended_combination, history = exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(eval_func=func, ranges_dict=ranges_dict, metric=metric, max_completion_cycles=4, max_size_gridsearch=51, num_best_tc_values_evaluated_at_gt=5)
-recommended_combination, history = exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(eval_func=func, ranges_dict=ranges_dict, metric=metric, max_completion_cycles=4, max_size_gridsearch=51, num_best_tc_values_evaluated_at_gt=5, fraction_true_val_to_trigger_patch=0.5)
+#recommended_combination, history = exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(eval_func=func, ranges_dict=ranges_dict, metric=metric, max_completion_cycles=4, max_size_gridsearch=51, num_best_tc_values_evaluated_at_gt=5, fraction_true_val_to_trigger_patch=0.5)
+recommended_combination, history = final_HTVTC_TSvMRP(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.01, assumed_rank=5, known_fraction_multiplier=1,max_completion_cycles=4, max_size_gridsearch=51)
 
 #End timer/memory profiler/CPU timer
 result = None
