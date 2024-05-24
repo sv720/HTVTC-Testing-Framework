@@ -29,7 +29,6 @@ def FCTN_TC(sparse_tensor, observed_entries_indices, max_R, rho=0.1, tol=1e-5, m
 
     X = sparse_tensor.copy()
     R = np.maximum(np.triu(np.ones((N, N)), 1) * 2, max_R - 5)
-    print("DEBUG: R = \n ", R)
     
     tempdim = (np.diag(Nway) + R + R.T).astype(int)
     max_tempdim = np.diag(Nway) + max_R + max_R.T
@@ -38,21 +37,23 @@ def FCTN_TC(sparse_tensor, observed_entries_indices, max_R, rho=0.1, tol=1e-5, m
     G = [np.random.normal(size = tempdim[i]) for i in range(N)]    
     r_change = 0.01
 
-    for tmp in G: 
-        print("DEBUG: tmp.shape = ", tmp.shape)
-
 
     # initialization end
     
     for k in range(maxit):
         Xold = X.copy()
         for i in range(N):
+            print("___________________________________")
             Xi = unfold(X, mode=i)
-            print("G[i].shape = ", G[i].shape)
             Gi = unfold(G[i], mode=i)
-            print("Gi.shape = ", Gi.shape)
-            print("sub_TN(G, i) = ", sub_TN(G,i))
-            Girest = tnreshape(sub_TN(G, i), N, i)
+            #print("DEBUG: i = ", i)
+            #print("DEBUG: G[i].shape = ", G[i].shape)
+            #print("DEBUG: G = ")
+            for g in G: 
+                print("DEBUG: g.shape = ", g.shape)
+            print(" ")
+            Girest = sub_TN(G, i)
+            Girest = tnreshape(Girest, N, i)
             tempC = Xi @ Girest.T + rho * Gi
             tempA = Girest @ Girest.T + rho * np.eye(Gi.shape[1])
             G[i] = fold(tempC @ np.linalg.pinv(tempA), mode=i, shape=tempdim[i])
@@ -87,47 +88,123 @@ def my_Unfold(tensor, shape, mode):
 def my_Fold(matrix, shape, mode):
     return fold(matrix, mode, shape)
 
+"""
 def tnreshape(tensor, N, mode):
     new_shape = list(tensor.shape)
     new_shape.pop(mode)
     return tensor.reshape(new_shape)
+"""
+def tnreshape(Grest, N, i):
+  """
+  Reshapes a tensor according to Theorem 4 in [1].
+
+  Args:
+      Grest: A tensor of size n_1 * R_{1,k} * ... * n_{k-1} * R_{k-1,k} * R_{k,k+1} * n_{k+1} * ... * R_{k,N} * n_N.
+      N: The dimension of tensor X.
+      i: The ith dimension.
+
+  Returns:
+      Out: A reshaped tensor of size (R_{1,k}...R_{k-1,k}R_{k,k+1}...R{k,N}) * (n_1...n_{k-1}n_{k+1}...n_{N}).
+  """
+
+  # Handle cases where Grest has fewer dimensions than expected
+  Nway = np.array(Grest.shape)
+  #print("DEBUG: pre loop Nway = ", Nway)
+  if len(Nway) < 2 * (N - 1):
+    Nway = np.concatenate((Nway, np.ones(2 * (N - 1) - len(Nway))))
+  #print("DEBUG: post loop Nway = ", Nway)
+  # Create arrays to store reshaped dimensions
+  m = np.zeros(N - 1, dtype=int)
+  n = np.zeros(N - 1, dtype=int)
+
+  # Define permutation based on dimension i
+  #print("DEBUG: i = ", i)
+  for k in range(N - 1):
+    #print("DEBUG: k = ", k)
+    if k < i:
+      #print("in if")
+      m[k] = 2 * (k+1) - 1
+      n[k] = 2 * (k+1) - 2
+    else:
+      #print("in else")
+      m[k] = 2 * (k+1) - 2
+      n[k] = 2 * (k+1) - 1
+    #print("m[k] = ", m[k])
+    #print("n[k] = ", n[k])
+
+  # Permute the tensor based on the calculated indices
+  #print("DEBUG: Grest.shape = ", Grest.shape)
+  #print("DEBUG: m = ", m)
+  #print("DEBUG: n = ", n)
+  dimorder =  np.concatenate((m,n)) #N.B. original matlab code was passing in a 2D array but think that was error (changed it in matlab and didn't seem to break anything)
+  tempG = np.transpose(Grest, dimorder)
+  """ 
+  print("DEBUG: tempG.shape = ", tempG.shape)
+  print("DEBUG: Nway.shape = ", Nway.shape)
+  print("DEBUG: m = ", m)
+  print("DEBUG: n = ", n)
+  print("DEBUG: Nway[m] = ", Nway[m])
+  print("DEBUG: Nway[n] = ", Nway[n])
+  print("DEBUG: np.prod(Nway[m]) = ", np.prod(Nway[m]))
+  print("DEBUG: np.prod(Nway[n]) = ", np.prod(Nway[n]))
+  """
+  
+  # Reshape the permuted tensor
+  Out = tempG.reshape((np.prod(Nway[m]), np.prod(Nway[n])))
+
+  return Out
 
 
 def sub_TN(G, k):
     #print("DEBUG: in sub_TN")
-    N = len(G)
+    G_copy = G.copy()
+    print("DEBUG: at input of sub_TN shape of G_copy:")
+    for g_copy in G_copy:
+        print("DEBUG: g_copy.shape = ", g_copy.shape)
+    N = len(G_copy)
     #print("k = ", k)
     a_1 = list(range(k+1, N))
     a_2 = list(range(0, k+1))
     a = a_1 + a_2
-    #print("DEBUG: a = ", a)
+    print("DEBUG: a = ", a)
   
-    
+    #print("DEBUG: pre transpose: G_copy[3].shape = ", G_copy[3].shape)
     #for i in list(range(1, k)) + list(range(k+1, N+1)):
-    for i in [x for x in range(1, N) if x != k]:
+    for i in [x for x in range(N) if x != k]:
         #print('i = ', i )
         #print("a = ", a)
-        #print("pre transpose G[i].shape = ", G[i].shape)
-        G[i] = np.transpose(G[i], a)  # Convert to zero-based indexing
-        #print("post transpose G[i].shape = ", G[i].shape)
-    
+        #print("pre transpose G_copy[i].shape = ", G_copy[i].shape)
+        G_copy[i] = np.transpose(G_copy[i], a)  # Convert to zero-based indexing
+        #print("post transpose G_copy[i].shape = ", G_copy[i].shape)
+    #print("DEBUG: post transpose: G_copy[3].shape = ", G_copy[3].shape)
+    print("DEBUG: after transposing shape of G_copy:")
+    for g_copy in G_copy:
+        print("DEBUG: g_copy.shape = ", g_copy.shape)
     m = [1]
     n = [0]
-    Out = G[a[0]]
+    Out = G_copy[a[0]]
     M = N
     
     for i in range(1, N-1):
-        """
+        print("========")
+        
         print("DEBUG: Out.shape = ", Out.shape)
         print("DEBUG: M = ", M)
         print("DEBUG: N = ", N)
         print("DEBUG: m = ", m)
         print("DEBUG: n = ", n)
         print("DEBUG: a[i] = ", a[i])
-        print("DEBUG: G[a[i]].shape = ", G[a[i]].shape)
-        """
-        Out = tl.tenalg.tensordot(Out, G[a[i]], modes=[m,n])
-        #Out = tensor_contraction(Out, G[a[i]], M, N, m, n)
+        #print("DEBUG: G_copy[a[i]].shape = ", G_copy[a[i]].shape)
+
+        #print("DEBUG: shape of G_copy:")
+        #for g_copy in G_copy:
+        #    print("DEBUG: g_copy.shape = ", g_copy.shape)
+            
+        
+        
+        Out = tl.tenalg.tensordot(Out, G_copy[a[i]], modes=[m,n])
+        #Out = tensor_contraction(Out, G_copy[a[i]], M, N, m, n)
+        #print("DEBUG: NEW Out.shape = ", Out.shape)
         M = M + N - 2*i
         n.append(i)
         tempm = 1 + i * (N - i)
