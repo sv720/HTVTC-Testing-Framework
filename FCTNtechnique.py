@@ -49,9 +49,9 @@ def FCTN_TC(sparse_tensor, observed_entries_indices, max_R, rho=0.1, tol=1e-5, m
             #print("DEBUG: i = ", i)
             #print("DEBUG: G[i].shape = ", G[i].shape)
             #print("DEBUG: G = ")
-            for g in G: 
-                print("DEBUG: g.shape = ", g.shape)
-            print(" ")
+            #for g in G: 
+            #    print("DEBUG: g.shape = ", g.shape)
+            
             Girest = sub_TN(G, i)
             Girest = tnreshape(Girest, N, i)
             tempC = Xi @ Girest.T + rho * Gi
@@ -158,9 +158,9 @@ def tnreshape(Grest, N, i):
 def sub_TN(G, k):
     #print("DEBUG: in sub_TN")
     G_copy = G.copy()
-    print("DEBUG: at input of sub_TN shape of G_copy:")
-    for g_copy in G_copy:
-        print("DEBUG: g_copy.shape = ", g_copy.shape)
+    #print("DEBUG: at input of sub_TN shape of G_copy:")
+    #for g_copy in G_copy:
+    #    print("DEBUG: g_copy.shape = ", g_copy.shape)
     N = len(G_copy)
     #print("k = ", k)
     a_1 = list(range(k+1, N))
@@ -178,8 +178,8 @@ def sub_TN(G, k):
         #print("post transpose G_copy[i].shape = ", G_copy[i].shape)
     #print("DEBUG: post transpose: G_copy[3].shape = ", G_copy[3].shape)
     print("DEBUG: after transposing shape of G_copy:")
-    for g_copy in G_copy:
-        print("DEBUG: g_copy.shape = ", g_copy.shape)
+    #for g_copy in G_copy:
+    #    print("DEBUG: g_copy.shape = ", g_copy.shape)
     m = [1]
     n = [0]
     Out = G_copy[a[0]]
@@ -187,13 +187,14 @@ def sub_TN(G, k):
     
     for i in range(1, N-1):
         print("========")
-        
+        """
         print("DEBUG: Out.shape = ", Out.shape)
         print("DEBUG: M = ", M)
         print("DEBUG: N = ", N)
         print("DEBUG: m = ", m)
         print("DEBUG: n = ", n)
         print("DEBUG: a[i] = ", a[i])
+        """
         #print("DEBUG: G_copy[a[i]].shape = ", G_copy[a[i]].shape)
 
         #print("DEBUG: shape of G_copy:")
@@ -218,17 +219,24 @@ def sub_TN(G, k):
     for i in range(1, N - k ):
         p[2*i-2] = 2*i - 1
         p[2*i-1] = 2*i - 2
-    """
-    print("DEBUG: Out.shape = ", Out.shape)
-    print("DEBUG: p = ", p)
-    print("DEBUG: N = ", N)
-    print("DEBUG: k = ", k)
-    print("DEBUG: p + list(range(2 * (N - k), 2 * (N - 1))) = ", p + list(range(2 * (N - k), 2 * (N - 1))))
-    """
-    Out = np.transpose(Out, p + list(range(2 * (N - k), 2 * (N - 1))))
-    #print("DEBUG: After first transpose: Out.shape = ", Out.shape)
-    #print("DEBUG: list(range(2 * (N - k), 2 * (N - 1))) + list(range(2 * (N - k))) = \n ", list(range(2 * (N - k), 2 * (N - 1))) + list(range(2 * (N - k - 1))))
-    Out = np.transpose(Out, list(range(2 * (N - k), 2 * (N - 1))) + list(range(2 * (N - k - 1))))
+    
+    #print("DEBUG: Out.shape = ", Out.shape)
+    #print("DEBUG: p = ", p)
+    #print("DEBUG: N = ", N)
+    #print("DEBUG: k = ", k)
+    #print("DEBUG: p = ", p)
+    extra_p_oneindex = list(range(2 * (N - (k+1)) + 1, 2 * (N - 1) + 1 ))
+    extra_p = [x - 1 for x in extra_p_oneindex] # now express in zero indexed terms
+    
+    Out = np.transpose(Out, p + extra_p)
+    print("DEBUG: After first transpose: Out.shape = ", Out.shape)
+    #print("DEBUG: list(range(2 * (N - (k+1)) + 1, 2 * (N - 1) + 1))  = \n ",  )
+    #print("DEBUG: list(range(1, 2 * (N - (k+1)) + 1)) = \n ", ))
+    #print("DEBUG: list(range(2 * (N - k), 2 * (N - 1))) + list(range(2 * (N - k))) = \n ", list(range(2 * (N - (k+1)) + 1, 2 * (N - 1) + 1)) + list(range(1, 2 * (N - (k+1) + 1))))
+    second_p_oneindex = list(range(2 * (N - (k+1)) + 1, 2 * (N - 1) + 1)) + list(range(1, 2 * (N - (k+1)) + 1))
+    second_p = [x - 1 for x in second_p_oneindex] # now express in zero indexed terms
+    print("DEBUG: second_p = ", second_p)
+    Out = np.transpose(Out, second_p)
     
     return Out
 
