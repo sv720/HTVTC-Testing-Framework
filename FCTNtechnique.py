@@ -43,15 +43,8 @@ def FCTN_TC(sparse_tensor, observed_entries_indices, max_R, rho=0.1, tol=1e-5, m
     for k in range(maxit):
         Xold = X.copy()
         for i in range(N):
-            print("___________________________________")
             Xi = unfold(X, mode=i)
             Gi = unfold(G[i], mode=i)
-            #print("DEBUG: i = ", i)
-            #print("DEBUG: G[i].shape = ", G[i].shape)
-            #print("DEBUG: G = ")
-            #for g in G: 
-            #    print("DEBUG: g.shape = ", g.shape)
-            
             Girest = sub_TN(G, i)
             Girest = tnreshape(Girest, N, i)
             tempC = Xi @ Girest.T + rho * Gi
@@ -88,12 +81,6 @@ def my_Unfold(tensor, shape, mode):
 def my_Fold(matrix, shape, mode):
     return fold(matrix, mode, shape)
 
-"""
-def tnreshape(tensor, N, mode):
-    new_shape = list(tensor.shape)
-    new_shape.pop(mode)
-    return tensor.reshape(new_shape)
-"""
 def tnreshape(Grest, N, i):
   """
   Reshapes a tensor according to Theorem 4 in [1].
@@ -109,7 +96,6 @@ def tnreshape(Grest, N, i):
 
   # Handle cases where Grest has fewer dimensions than expected
   Nway = np.array(Grest.shape)
-  #print("DEBUG: pre loop Nway = ", Nway)
   if len(Nway) < 2 * (N - 1):
     Nway = np.concatenate((Nway, np.ones(2 * (N - 1) - len(Nway))))
   #print("DEBUG: post loop Nway = ", Nway)
@@ -118,36 +104,17 @@ def tnreshape(Grest, N, i):
   n = np.zeros(N - 1, dtype=int)
 
   # Define permutation based on dimension i
-  #print("DEBUG: i = ", i)
   for k in range(N - 1):
-    #print("DEBUG: k = ", k)
     if k < i:
-      #print("in if")
       m[k] = 2 * (k+1) - 1
       n[k] = 2 * (k+1) - 2
     else:
-      #print("in else")
       m[k] = 2 * (k+1) - 2
       n[k] = 2 * (k+1) - 1
-    #print("m[k] = ", m[k])
-    #print("n[k] = ", n[k])
 
   # Permute the tensor based on the calculated indices
-  #print("DEBUG: Grest.shape = ", Grest.shape)
-  #print("DEBUG: m = ", m)
-  #print("DEBUG: n = ", n)
   dimorder =  np.concatenate((m,n)) #N.B. original matlab code was passing in a 2D array but think that was error (changed it in matlab and didn't seem to break anything)
   tempG = np.transpose(Grest, dimorder)
-  """ 
-  print("DEBUG: tempG.shape = ", tempG.shape)
-  print("DEBUG: Nway.shape = ", Nway.shape)
-  print("DEBUG: m = ", m)
-  print("DEBUG: n = ", n)
-  print("DEBUG: Nway[m] = ", Nway[m])
-  print("DEBUG: Nway[n] = ", Nway[n])
-  print("DEBUG: np.prod(Nway[m]) = ", np.prod(Nway[m]))
-  print("DEBUG: np.prod(Nway[n]) = ", np.prod(Nway[n]))
-  """
   
   # Reshape the permuted tensor
   Out = tempG.reshape((np.prod(Nway[m]), np.prod(Nway[n])))
@@ -156,56 +123,25 @@ def tnreshape(Grest, N, i):
 
 
 def sub_TN(G, k):
-    #print("DEBUG: in sub_TN")
     G_copy = G.copy()
-    #print("DEBUG: at input of sub_TN shape of G_copy:")
-    #for g_copy in G_copy:
-    #    print("DEBUG: g_copy.shape = ", g_copy.shape)
     N = len(G_copy)
-    #print("k = ", k)
     a_1 = list(range(k+1, N))
     a_2 = list(range(0, k+1))
     a = a_1 + a_2
-    print("DEBUG: a = ", a)
   
     #print("DEBUG: pre transpose: G_copy[3].shape = ", G_copy[3].shape)
     #for i in list(range(1, k)) + list(range(k+1, N+1)):
     for i in [x for x in range(N) if x != k]:
-        #print('i = ', i )
-        #print("a = ", a)
-        #print("pre transpose G_copy[i].shape = ", G_copy[i].shape)
         G_copy[i] = np.transpose(G_copy[i], a)  # Convert to zero-based indexing
-        #print("post transpose G_copy[i].shape = ", G_copy[i].shape)
-    #print("DEBUG: post transpose: G_copy[3].shape = ", G_copy[3].shape)
-    print("DEBUG: after transposing shape of G_copy:")
-    #for g_copy in G_copy:
-    #    print("DEBUG: g_copy.shape = ", g_copy.shape)
     m = [1]
     n = [0]
     Out = G_copy[a[0]]
     M = N
     
     for i in range(1, N-1):
-        print("========")
-        """
-        print("DEBUG: Out.shape = ", Out.shape)
-        print("DEBUG: M = ", M)
-        print("DEBUG: N = ", N)
-        print("DEBUG: m = ", m)
-        print("DEBUG: n = ", n)
-        print("DEBUG: a[i] = ", a[i])
-        """
-        #print("DEBUG: G_copy[a[i]].shape = ", G_copy[a[i]].shape)
-
-        #print("DEBUG: shape of G_copy:")
-        #for g_copy in G_copy:
-        #    print("DEBUG: g_copy.shape = ", g_copy.shape)
-            
         
         
         Out = tl.tenalg.tensordot(Out, G_copy[a[i]], modes=[m,n])
-        #Out = tensor_contraction(Out, G_copy[a[i]], M, N, m, n)
-        #print("DEBUG: NEW Out.shape = ", Out.shape)
         M = M + N - 2*i
         n.append(i)
         tempm = 1 + i * (N - i)
@@ -219,23 +155,12 @@ def sub_TN(G, k):
     for i in range(1, N - k ):
         p[2*i-2] = 2*i - 1
         p[2*i-1] = 2*i - 2
-    
-    #print("DEBUG: Out.shape = ", Out.shape)
-    #print("DEBUG: p = ", p)
-    #print("DEBUG: N = ", N)
-    #print("DEBUG: k = ", k)
-    #print("DEBUG: p = ", p)
     extra_p_oneindex = list(range(2 * (N - (k+1)) + 1, 2 * (N - 1) + 1 ))
     extra_p = [x - 1 for x in extra_p_oneindex] # now express in zero indexed terms
     
     Out = np.transpose(Out, p + extra_p)
-    print("DEBUG: After first transpose: Out.shape = ", Out.shape)
-    #print("DEBUG: list(range(2 * (N - (k+1)) + 1, 2 * (N - 1) + 1))  = \n ",  )
-    #print("DEBUG: list(range(1, 2 * (N - (k+1)) + 1)) = \n ", ))
-    #print("DEBUG: list(range(2 * (N - k), 2 * (N - 1))) + list(range(2 * (N - k))) = \n ", list(range(2 * (N - (k+1)) + 1, 2 * (N - 1) + 1)) + list(range(1, 2 * (N - (k+1) + 1))))
     second_p_oneindex = list(range(2 * (N - (k+1)) + 1, 2 * (N - 1) + 1)) + list(range(1, 2 * (N - (k+1)) + 1))
     second_p = [x - 1 for x in second_p_oneindex] # now express in zero indexed terms
-    print("DEBUG: second_p = ", second_p)
     Out = np.transpose(Out, second_p)
     
     return Out
@@ -264,9 +189,6 @@ def tensor_contraction(X, Y, Sx, Sy, n, m):
     
     tempY = np.transpose(Y, m + indexy)
     tempYY = tempY.reshape(np.prod([Ly[i] for i in m]), np.prod([Ly[i] for i in indexy]))
-    
-    print("DEBUG: tempXX.shape = ", tempXX.shape)
-    print("DEBUG: tempYY.shape = ", tempYY.shape)
 
     tempOut = np.dot(tempXX, tempYY)
     Out = tempOut.reshape([Lx[i] for i in indexx] + [Ly[i] for i in indexy])
@@ -275,10 +197,25 @@ def tensor_contraction(X, Y, Sx, Sy, n, m):
 
 
 def TN_composition(G):
-    # This function should compose the tensor from the factors
-    # The specific implementation will depend on the exact method
-    pass
-
+    G_copy = G.copy()
+    N = len(G_copy)
+    m = [1] #zero index
+    n = [0] #zero index
+    Out = G_copy[0]
+    M = N
+    
+    for i in range(1, N): #use this range as we ommit a + 1 when indexing G_copy (compared to MATLAB)
+        Out = tl.tenalg.tensordot(Out, G_copy[i], modes=[m, n])
+        M = M + N - 2 * i
+        n.append(i) #as we do in G_copy, we drop + 1
+        tempm = 1 + i * (N - i)
+        
+        if i > 1:
+            m[1:] = [m_val - i for m_val, i in zip(m[1:], range(1, i))]
+        
+        m.append(tempm)
+    
+    return Out
 # Example usage
 # sparse_tensor = np.random.rand(4, 4, 4)  # Example tensor
 # observed_entries_indices = np.array([[0, 1], [1, 2], [2, 3]])  # Example observed entries

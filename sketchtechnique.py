@@ -15,12 +15,9 @@ def apply_random_projections(tensor, projection_matrices, skipped_index=None):
 def tensorCompletionSketchingMRP(eval_func, ranges_dict,  metric, eval_trials=1, known_fraction=0.05,assumed_rank = 2):
     #generate a tensor with zeros in all but random sampled values
     sparse_tensor, _ = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=ranges_dict, known_fraction=known_fraction, metric=metric, eval_trials=eval_trials, empty_are = 'gaussian')
-    print("DEBUG: sparse_tensor (post replacement of zeros with gaussian points)= \n ", sparse_tensor)
     
     full_sketch_projection_dims = sparse_tensor.ndim*[assumed_rank]
 
-    print("DEBUG: sparse_tensor.shape = ", sparse_tensor.shape)
-    print("DEBUG: full_sketch_projection_dims = ", full_sketch_projection_dims)
 
     num_modes = sparse_tensor.ndim
 

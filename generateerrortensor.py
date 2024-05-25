@@ -67,8 +67,6 @@ def generateIncompleteErrorTensor(eval_func, ranges_dict, known_fraction, metric
         zero_indices = np.where(error_tensor == 0)   
         mean = np.mean(sampled_point_values)
         std = np.std(sampled_point_values)/len(sampled_point_values)
-        print("DEBUG: mean = ", mean)
-        print("DEBUG: std = ", std)
         gaussian_values = np.random.normal(mean, std, size=len(zero_indices[0])) #N.B. dividing by n to get best estimate
         error_tensor[zero_indices] = gaussian_values
     
