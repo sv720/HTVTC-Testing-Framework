@@ -7,6 +7,7 @@ sys.path.insert(1, p)
 
 from crosstechnique import generateCrossComponents, noisyReconstruction, noisyReconstruction_modified_experiment2, generateCrossComponents_modified_experiment1, generateCrossComponents_modified_experiment2
 from sketchtechnique import tensorCompletionSketchingMRP
+from FCTNtechnique import FCTN_TC
 from tensorsearch import findBestValues, findBestValues_sort, hyperparametersFromIndices
 from generateerrortensor import generateIncompleteErrorTensor
 np.random.seed(1)
@@ -732,8 +733,6 @@ def final_HTVTC_TSvMRP(ranges_dict, eval_func, metric, initial_known_fraction, a
     for cycle_num in range(max_completion_cycles):
         print(f'in final_HTVTC cycle : {cycle_num}')
         #Perform the tensor completion
-        #body, joints, arms = generateCrossComponents(eval_func=eval_func, ranges_dict=ranges_dict, metric=metric, eval_trials=eval_trials, **kwargs)
-        #completed_tensor = noisyReconstruction(body, joints, arms)
         completed_tensor = tensorCompletionSketchingMRP(eval_func=eval_func, ranges_dict=ranges_dict, metric=metric, eval_trials=eval_trials, known_fraction=known_fraction, assumed_rank=assumed_rank)
         known_fraction = known_fraction_multiplier*np.sum(completed_tensor.shape)/np.product(completed_tensor.shape)#this ensures we sample the same number of points as would in cross (of scaled by multiplier)
         #print(f'DEBUG: original method: completed tensor = \n {completed_tensor} ')
@@ -761,6 +760,81 @@ def final_HTVTC_TSvMRP(ranges_dict, eval_func, metric, initial_known_fraction, a
         if completed_tensor.size < max_size_gridsearch:
             #print("DEBUG: below completed tensor is smaller than maximum size of grid-search: making measurment ")
             #print(f'completed_tensor.size =  : {completed_tensor.size}')
+            #Generate complete tensor
+            full_tensor, _ = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=ranges_dict, known_fraction=1, metric=metric, eval_trials=eval_trials, **kwargs)
+            #Find best value (true value: not infered)
+            bestValue = findBestValues(full_tensor, smallest=True, number_of_values=1)
+            index_list, value_list = bestValue['indices'], bestValue['values']
+            #Obtain hyperparameter from it
+            combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
+            selected_combination = combinations[0]
+            #print(f'selected_combination (g) = : {selected_combination}')
+
+            #Add to history
+            history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'method': 'grid search'})
+            break
+        
+        #Only need to update the ranges dict if we are using it in the next loop iteration.
+        if cycle_num == max_completion_cycles - 1:
+            break
+        ranges_dict = update_ranges_dict(ranges_dict, selected_combination, min_interval)
+        
+    #return the optimal hyperparameter combination as decided by the algorithm-------------------------------------------
+    return selected_combination, history
+
+"""
+final_HTVTC_FCTN is the same as final_HTVTC, except that the tensor is no longer being completed with with cross but with Fully-Connected Tensor Network completion
+
+"""
+def final_HTVTC_FCTN(ranges_dict, eval_func, metric, initial_known_fraction, assumed_rank_max, known_fraction_multiplier = 1, **kwargs):
+
+    # Deal with kwargs that are not passed into tensor generation------------------------------------------------------
+    kwargskeys = kwargs.keys()
+    #The minimum resolution interval required for real-valued hyperparameter. For integers, the minimum is 1.
+    min_interval = 1
+    if 'min_interval' in kwargskeys:
+        min_interval = kwargs['min_interval']
+    #The maximum number of tensor completions that are needed. The algorithm may terminate before completing this many completions.
+    max_completion_cycles = 1
+    if 'max_completion_cycles' in kwargskeys:
+        max_completion_cycles = kwargs['max_completion_cycles']
+    #The maximum number of elements before a grid search can be performed. If 0, this means there will be no grid search.
+    max_size_gridsearch = 0
+    if 'max_size_gridsearch' in kwargskeys:
+        max_size_gridsearch = kwargs['max_size_gridsearch']
+    # The number of evaluations of the evaluation function needed to generate one tensor element.
+    eval_trials = 1
+    if 'eval_trials' in kwargskeys:
+        eval_trials = kwargs['eval_trials']
+
+    #Perform the repeated tensor completions----------------------------------------------------------------------------
+    history = []
+    selected_combination = None
+    known_fraction = initial_known_fraction*known_fraction_multiplier
+    for cycle_num in range(max_completion_cycles):
+        print(f'in final_HTVTC cycle : {cycle_num}')
+        #Perform the tensor completion
+        
+        sparse_tensor, observed_indices = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=ranges_dict, known_fraction=known_fraction, metric=metric, eval_trials=eval_trials, **kwargs)
+        n_dims = sparse_tensor.ndim
+        max_R = np.ones((n_dims,n_dims)) #TODO: think about using assumed_rank_max
+        completed_tensor, _ = FCTN_TC(sparse_tensor=sparse_tensor, observed_entries_indices=observed_indices, max_R=max_R, rho=0.1, tol=1e-5,maxit=1000)
+        known_fraction = known_fraction_multiplier*np.sum(completed_tensor.shape)/np.product(completed_tensor.shape)#this ensures we sample the same number of points as would in cross (of scaled by multiplier)
+        #print(f'DEBUG: original method: completed tensor = \n {completed_tensor} ')
+        #Find best value
+        bestValue = findBestValues(completed_tensor, smallest=True, number_of_values=1)
+
+        index_list, value_list = bestValue['indices'], bestValue['values']
+        #Obtain hyperparameter from it
+        combinations = hyperparametersFromIndices(index_list, ranges_dict, ignore_length_1=True)
+        selected_combination = combinations[0]
+        #print(f'DEBUG: original method: selected_combination = \n {selected_combination}')
+        true_loss_at_selected_combination = eval_func(metric=metric, **selected_combination)
+        #Add to history 
+        history.append({'combination': selected_combination, 'predicted_loss': value_list[0], 'true_loss_at_selected_combination': true_loss_at_selected_combination, 'method': 'tensor completion'})
+        
+        #If below limit, perform grid search and break.
+        if completed_tensor.size < max_size_gridsearch:
             #Generate complete tensor
             full_tensor, _ = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=ranges_dict, known_fraction=1, metric=metric, eval_trials=eval_trials, **kwargs)
             #Find best value (true value: not infered)

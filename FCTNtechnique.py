@@ -19,7 +19,7 @@ from tensorly.tenalg import khatri_rao, mode_dot, tensordot
 from tensorly.base import unfold, fold
 
 def FCTN_TC(sparse_tensor, observed_entries_indices, max_R, rho=0.1, tol=1e-5, maxit=1000):
-
+    print("sparse_tensor.shape = ", sparse_tensor.shape)
     # initialization begin
     N = sparse_tensor.ndim
     Nway = sparse_tensor.shape
@@ -52,21 +52,26 @@ def FCTN_TC(sparse_tensor, observed_entries_indices, max_R, rho=0.1, tol=1e-5, m
             G[i] = fold(tempC @ np.linalg.pinv(tempA), mode=i, shape=tempdim[i])
         
         X = (TN_composition(G) + rho * Xold) / (1 + rho)
-        X[observed_entries_indices] = sparse_tensor[observed_entries_indices]
+        for idx in observed_entries_indices:
+            X[idx] = sparse_tensor[idx]
         
         rse = np.linalg.norm(X - Xold) / np.linalg.norm(Xold)
         
-        if k % 10 == 0 or k == 1:
+        if k % 10 == 0 or k == 0:
             print(f'FCTN-TC: iter = {k}   RSE = {rse}')
         
         if rse < tol:
             break
-        
+        #TODO: fixed the below: couldn't get this to work (it changes the size of the tensor weirdly)
+        # also: it isn't ever triggered in the demo so turn it off for now
+        """
         rank_inc = (tempdim < max_tempdim).astype(int)
         if rse < r_change and np.sum(rank_inc) != 0:
+            print("DEBUG: ADAPTING RANK")
             G = rank_inc_adaptive(G, rank_inc, N)
             tempdim += rank_inc
             r_change *= 0.5
+        """
     
     return X, G
 
@@ -75,11 +80,7 @@ def rank_inc_adaptive(G, rank_inc, N):
         G[j] = np.pad(G[j], [(0, r) for r in rank_inc[j]], mode='constant', constant_values=np.random.rand())
     return G
 
-def my_Unfold(tensor, shape, mode):
-    return unfold(tensor, mode)
 
-def my_Fold(matrix, shape, mode):
-    return fold(matrix, mode, shape)
 
 def tnreshape(Grest, N, i):
   """
