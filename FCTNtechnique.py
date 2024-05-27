@@ -19,7 +19,7 @@ from tensorly.tenalg import khatri_rao, mode_dot, tensordot
 from tensorly.base import unfold, fold
 
 def FCTN_TC(sparse_tensor, observed_entries_indices, max_R, rho=0.1, tol=1e-5, maxit=1000):
-    print("sparse_tensor.shape = ", sparse_tensor.shape)
+    #print("sparse_tensor.shape = ", sparse_tensor.shape)
     # initialization begin
     N = sparse_tensor.ndim
     Nway = sparse_tensor.shape

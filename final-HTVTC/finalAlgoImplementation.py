@@ -812,14 +812,14 @@ def final_HTVTC_FCTN(ranges_dict, eval_func, metric, initial_known_fraction, ass
     selected_combination = None
     known_fraction = initial_known_fraction*known_fraction_multiplier
     for cycle_num in range(max_completion_cycles):
-        print(f'in final_HTVTC cycle : {cycle_num}')
+        #print(f'in final_HTVTC cycle : {cycle_num}')
         #Perform the tensor completion
-        
+
         sparse_tensor, observed_indices = generateIncompleteErrorTensor(eval_func=eval_func, ranges_dict=ranges_dict, known_fraction=known_fraction, metric=metric, eval_trials=eval_trials, **kwargs)
         n_dims = sparse_tensor.ndim
         max_R = np.ones((n_dims,n_dims)) #TODO: think about using assumed_rank_max
         completed_tensor, _ = FCTN_TC(sparse_tensor=sparse_tensor, observed_entries_indices=observed_indices, max_R=max_R, rho=0.1, tol=1e-5,maxit=1000)
-        known_fraction = known_fraction_multiplier*np.sum(completed_tensor.shape)/np.product(completed_tensor.shape)#this ensures we sample the same number of points as would in cross (of scaled by multiplier)
+        known_fraction = known_fraction_multiplier*np.sum(completed_tensor.shape)/np.prod(completed_tensor.shape)#this ensures we sample the same number of points as would in cross (of scaled by multiplier)
         #print(f'DEBUG: original method: completed tensor = \n {completed_tensor} ')
         #Find best value
         bestValue = findBestValues(completed_tensor, smallest=True, number_of_values=1)
