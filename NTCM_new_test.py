@@ -111,8 +111,8 @@ ground_truth_tensor = np.array(
 #print("DEBUG: ground_truth_tensor.shape = ", ground_truth_tensor.shape)
 sampled_fraction = 0.3
 assumed_rank = 2
-print("DEBUG: sampled_fraction = ", sampled_fraction)
-print("DEBUG: assumed_rank = ", assumed_rank)
+#print("DEBUG: sampled_fraction = ", sampled_fraction)
+#print("DEBUG: assumed_rank = ", assumed_rank)
 mask = np.random.choice([0, 1], size=ground_truth_tensor.shape, p=[1 - sampled_fraction, sampled_fraction])
 #Apply element-wise multiplication to zero out elements based on the mask
 sparse_tensor = ground_truth_tensor * mask
@@ -136,48 +136,56 @@ sampled_indices = [tuple(idx) for idx in sampled_indices]
 
 n_dims = sparse_tensor.ndim
 #max_R = np.ones((n_dims,n_dims))
-max_R = np.full((n_dims, n_dims), assumed_rank)
+#max_R = np.full((n_dims, n_dims), assumed_rank)
 #print("DEBUG: n_dims = ", n_dims)
 #print("DEBUG: sparse_tensor.shape = ", sparse_tensor.shape)
 #print("DEBUG: max_R = ", max_R)
+body, joints, arms = generateCrossComponents(eval_func=func, ranges_dict=ranges_dict_copy_3, metric=metric, eval_trials=1)
 start_time = time.perf_counter_ns()
-reconstructed_tensor_FCTN, _ = FCTN_TC(sparse_tensor, sampled_indices, max_R = max_R, maxit=1000)
+completed_tensor_cross = noisyReconstruction(body, joints, arms)
+#reconstructed_tensor_FCTN, _ = FCTN_TC(sparse_tensor, sampled_indices, max_R = max_R, maxit=1000)
 end_time = time.perf_counter_ns()
 exec_time = end_time - start_time
-ground_truth_tensor, _ = generateIncompleteErrorTensor(eval_func=func, ranges_dict=ranges_dict_copy_2, known_fraction=1, metric=metric, eval_trials=1)
+ground_truth_tensor, _ = generateIncompleteErrorTensor(eval_func=func, ranges_dict=ranges_dict_copy_2, known_fraction=1, metric=metric, eval_trials=1) #same as assignment above
 
+
+print("ground_truth_tensor = \n ", ground_truth_tensor)
+print("completed_tensor_cross = \n ", completed_tensor_cross)
+
+print("DEBUG: ground_truth_tensor.mean() = ", ground_truth_tensor.mean())
+print("DEBUG: completed_tensor_cross.mean() = ", completed_tensor_cross.mean())
 #mse_ground_truth_sketch = np.mean((ground_truth_tensor - reconstructed_tensor_sketch)**2)
 #mse_sparse_tensor = np.mean((sparse_tensor - reconstructed_tensor)**2)
 
-#body, joints, arms = generateCrossComponents(eval_func=func, ranges_dict=ranges_dict_copy_3, metric=metric, eval_trials=1)
-#completed_tensor_cross = noisyReconstruction(body, joints, arms)
 
-#mse_ground_truth_cross = np.mean((ground_truth_tensor - completed_tensor_cross.reshape(11, 2, 1, 11))**2)
 
-mse_ground_truth_FCTN = np.mean((ground_truth_tensor - reconstructed_tensor_FCTN)**2)
+mse_ground_truth_cross = np.mean((ground_truth_tensor - completed_tensor_cross.reshape(11,2,1,11))**2)
+
+#mse_ground_truth_FCTN = np.mean((ground_truth_tensor - reconstructed_tensor_FCTN)**2)
 ground_truth_squared_magnitude = np.mean((ground_truth_tensor)**2)
 #print("DEBUG: reconstructed_tensor_sketch.shape = \n ", reconstructed_tensor_sketch.shape)
 #print("DEBUG: ground_truth_tensor         = \n ",ground_truth_tensor)
 #print("DEBUG: completed_tensor_cross.shape      = \n", completed_tensor_cross.shape)
 #print("DEBUG: reconstructed_tensor_FCTN   = \n ", reconstructed_tensor_FCTN)
 
-#completed_tensor_cross_squared_magnitude = np.mean((completed_tensor_cross)**2)
+completed_tensor_cross_squared_magnitude = np.mean((completed_tensor_cross)**2)
 #reconstructed_tensor_sketch_squared_magnitude = np.mean((reconstructed_tensor_sketch)**2)
-reconstructed_tensor_FCTN_squared_magnitude = np.mean((reconstructed_tensor_FCTN)**2)
+#reconstructed_tensor_FCTN_squared_magnitude = np.mean((reconstructed_tensor_FCTN)**2)
 
 
 
 
 #print("DEBUG: mse_ground_truth_sketch   = ", mse_ground_truth_sketch)
-#print("DEBUG: mse_ground_truth_cross    = ", mse_ground_truth_cross)
+
 
 print("DEBUG: ground_truth_squared_magnitude = ", ground_truth_squared_magnitude)
-#print("DEBUG: completed_tensor_cross_squared_magnitude      = ", completed_tensor_cross_squared_magnitude)
+print("DEBUG: completed_tensor_cross_squared_magnitude      = ", completed_tensor_cross_squared_magnitude)
 
 #print("DEBUG: reconstructed_tensor_sketch_squared_magnitude = ", reconstructed_tensor_sketch_squared_magnitude)
-print("DEBUG: reconstructed_tensor_FCTN_squared_magnitude   = ", reconstructed_tensor_FCTN_squared_magnitude)
-print("DEBUG: mse_ground_truth_FCTN     = ", mse_ground_truth_FCTN)
-print("Power ratio (Rec/GT) = ", reconstructed_tensor_FCTN_squared_magnitude/ground_truth_squared_magnitude)
+#print("DEBUG: reconstructed_tensor_FCTN_squared_magnitude   = ", reconstructed_tensor_FCTN_squared_magnitude)
+#print("DEBUG: mse_ground_truth_FCTN     = ", mse_ground_truth_FCTN)
+print("DEBUG: mse_ground_truth_cross    = ", mse_ground_truth_cross)
+print("Power ratio (Rec/GT) = ", completed_tensor_cross_squared_magnitude/ground_truth_squared_magnitude)
 print("DEBUG: EXEC_TIME (ms) = ", exec_time * (10**(-6)))
 
 

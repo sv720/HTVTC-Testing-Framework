@@ -11,12 +11,16 @@ p11074
 """
 
 
+#Enable importing code from parent directory
+import os, sys
+p = os.path.abspath('..')
+sys.path.insert(1, p)
+
 import numpy as np
 import tensorly as tl
 from tensorly.tenalg import khatri_rao, mode_dot, tensordot
-
-
 from tensorly.base import unfold, fold
+from normalization import standard_score_normalization, standard_score_denormalizaion
 
 def FCTN_TC(sparse_tensor, observed_entries_indices, max_R, rho=0.1, tol=1e-5, maxit=1000):
     #print("sparse_tensor.shape = ", sparse_tensor.shape)
@@ -28,8 +32,12 @@ def FCTN_TC(sparse_tensor, observed_entries_indices, max_R, rho=0.1, tol=1e-5, m
         raise ValueError('max_R should be an upper triangular square matrix.')
 
     X = sparse_tensor.copy()
-    R = np.maximum(np.triu(np.ones((N, N)), 1) * 2, max_R - 5)
-    
+    #R = np.maximum(np.triu(np.ones((N, N)), 1) * 2, max_R - 5)
+    #print("DEBUG: R = ", R)
+
+    #print("DEBUG: max_R = \n ", max_R)
+    R = np.triu(max_R, 1)
+    #print("DEBUG: R = \n ", R)
     tempdim = (np.diag(Nway) + R + R.T).astype(int)
     max_tempdim = np.diag(Nway) + max_R + max_R.T
     
@@ -72,6 +80,71 @@ def FCTN_TC(sparse_tensor, observed_entries_indices, max_R, rho=0.1, tol=1e-5, m
             tempdim += rank_inc
             r_change *= 0.5
         """
+    
+    return X, G
+
+def FCTN_TC_minmax_feat_scal_norm(sparse_tensor, observed_entries_indices, max_R, rho=0.1, tol=1e-5, maxit=1000):
+    #print("sparse_tensor.shape = ", sparse_tensor.shape)
+    # initialization begin
+    N = sparse_tensor.ndim
+    Nway = sparse_tensor.shape
+    
+    if max_R.shape[0] != max_R.shape[1]:
+        raise ValueError('max_R should be an upper triangular square matrix.')
+
+    sparse_tensor_copy, norm_mean, norm_std = standard_score_normalization(sparse_tensor.copy())
+    print("DEBUG: norm_mean = ", norm_mean)
+    print("DEBUG: norm _std = ", norm_std)
+    X = sparse_tensor_copy
+    #R = np.maximum(np.triu(np.ones((N, N)), 1) * 2, max_R - 5)
+    #print("DEBUG: R = ", R)
+
+    #print("DEBUG: max_R = \n ", max_R)
+    R = np.triu(max_R, 1)
+    #print("DEBUG: R = \n ", R)
+    tempdim = (np.diag(Nway) + R + R.T).astype(int)
+    max_tempdim = np.diag(Nway) + max_R + max_R.T
+    
+    
+    G = [np.random.normal(size = tempdim[i]) for i in range(N)]    
+    r_change = 0.01
+
+
+    # initialization end
+    
+    for k in range(maxit):
+        Xold = X.copy()
+        for i in range(N):
+            Xi = unfold(X, mode=i)
+            Gi = unfold(G[i], mode=i)
+            Girest = sub_TN(G, i)
+            Girest = tnreshape(Girest, N, i)
+            tempC = Xi @ Girest.T + rho * Gi
+            tempA = Girest @ Girest.T + rho * np.eye(Gi.shape[1])
+            G[i] = fold(tempC @ np.linalg.pinv(tempA), mode=i, shape=tempdim[i])
+        
+        X = (TN_composition(G) + rho * Xold) / (1 + rho)
+        for idx in observed_entries_indices:
+            X[idx] = sparse_tensor_copy[idx]
+        
+        rse = np.linalg.norm(X - Xold) / np.linalg.norm(Xold)
+        
+        if k % 10 == 0 or k == 0:
+            print(f'FCTN-TC: iter = {k}   RSE = {rse}')
+        
+        if rse < tol:
+            break
+        #TODO: fixed the below: couldn't get this to work (it changes the size of the tensor weirdly)
+        # also: it isn't ever triggered in the demo so turn it off for now
+        """
+        rank_inc = (tempdim < max_tempdim).astype(int)
+        if rse < r_change and np.sum(rank_inc) != 0:
+            print("DEBUG: ADAPTING RANK")
+            G = rank_inc_adaptive(G, rank_inc, N)
+            tempdim += rank_inc
+            r_change *= 0.5
+        """
+    X = standard_score_denormalizaion(X, norm_mean, norm_std)
     
     return X, G
 

@@ -2,6 +2,7 @@
 import os, sys
 p = os.path.abspath('..')
 sys.path.insert(1, p)
+sys.path.append('/home/scott/Imperial/Year4/FYP/pyten')
 
 from trainmodels import crossValidationFunctionGenerator
 from loaddata import loadData, trainTestSplit, extractZeroOneClasses, convertZeroOne
@@ -13,6 +14,11 @@ from crosstechnique import generateCrossComponents, noisyReconstruction
 from sketchtechnique import tensorCompletionSketchingMRP
 from generateerrortensor import generateIncompleteErrorTensor
 import time
+from tensorly.tenalg import multi_mode_dot
+from tensorly import unfold
+#import pyten
+from pyten_completion import pyten_TC
+
 
 task = 'classification'
 data = loadData(source='sklearn', identifier='wine', task=task)
@@ -109,11 +115,14 @@ ground_truth_tensor = np.array(
 )
 
 #print("DEBUG: ground_truth_tensor.shape = ", ground_truth_tensor.shape)
-sampled_fraction = 0.3
+sampled_fraction = 0.1
 assumed_rank = 2
+maxiter = 20
+
 print("DEBUG: sampled_fraction = ", sampled_fraction)
 print("DEBUG: assumed_rank = ", assumed_rank)
-mask = np.random.choice([0, 1], size=ground_truth_tensor.shape, p=[1 - sampled_fraction, sampled_fraction])
+print("DEBUG: maxiter = ", maxiter)
+mask = np.random.choice([np.nan, 1], size=ground_truth_tensor.shape, p=[1 - sampled_fraction, sampled_fraction])
 #Apply element-wise multiplication to zero out elements based on the mask
 sparse_tensor = ground_truth_tensor * mask
 
@@ -136,13 +145,29 @@ sampled_indices = [tuple(idx) for idx in sampled_indices]
 
 n_dims = sparse_tensor.ndim
 #max_R = np.ones((n_dims,n_dims))
-max_R = np.full((n_dims, n_dims), assumed_rank)
+#max_R = np.full((n_dims, n_dims), assumed_rank)
 #print("DEBUG: n_dims = ", n_dims)
 #print("DEBUG: sparse_tensor.shape = ", sparse_tensor.shape)
 #print("DEBUG: max_R = ", max_R)
+
+sparse_tensor = sparse_tensor.reshape(11,2,11)
+function_name = 'tucker_als'
+#r = 2
+tol = 1e-8
+init = 'random'
+#subs = list(np.ndindex(sparse_tensor.shape))
+#vals = np.array([sparse_tensor[idx] for idx in subs])
+#vals = vals.reshape(242,1)
+#omega = None
+#recover = None
+#printitn = 0
+#file_name = None
+
 start_time = time.perf_counter_ns()
-reconstructed_tensor_FCTN, _ = FCTN_TC(sparse_tensor, sampled_indices, max_R = max_R, maxit=1000)
+reconsturucted_tensor_tucker_als = pyten_TC(sparse_tensor=sparse_tensor, function_name='tucker_als', r=assumed_rank, tol=tol, maxiter=maxiter)
+#reconstructed_tensor_FCTN, _ = FCTN_TC(sparse_tensor, sampled_indices, max_R = max_R, maxit=1000)
 end_time = time.perf_counter_ns()
+
 exec_time = end_time - start_time
 ground_truth_tensor, _ = generateIncompleteErrorTensor(eval_func=func, ranges_dict=ranges_dict_copy_2, known_fraction=1, metric=metric, eval_trials=1)
 
@@ -153,8 +178,9 @@ ground_truth_tensor, _ = generateIncompleteErrorTensor(eval_func=func, ranges_di
 #completed_tensor_cross = noisyReconstruction(body, joints, arms)
 
 #mse_ground_truth_cross = np.mean((ground_truth_tensor - completed_tensor_cross.reshape(11, 2, 1, 11))**2)
+#mse_ground_truth_FCTN = np.mean((ground_truth_tensor - reconstructed_tensor_FCTN)**2)
+mse_ground_truth_tucker_als = np.mean((ground_truth_tensor.reshape(11,2,11)-reconsturucted_tensor_tucker_als)**2)
 
-mse_ground_truth_FCTN = np.mean((ground_truth_tensor - reconstructed_tensor_FCTN)**2)
 ground_truth_squared_magnitude = np.mean((ground_truth_tensor)**2)
 #print("DEBUG: reconstructed_tensor_sketch.shape = \n ", reconstructed_tensor_sketch.shape)
 #print("DEBUG: ground_truth_tensor         = \n ",ground_truth_tensor)
@@ -163,7 +189,8 @@ ground_truth_squared_magnitude = np.mean((ground_truth_tensor)**2)
 
 #completed_tensor_cross_squared_magnitude = np.mean((completed_tensor_cross)**2)
 #reconstructed_tensor_sketch_squared_magnitude = np.mean((reconstructed_tensor_sketch)**2)
-reconstructed_tensor_FCTN_squared_magnitude = np.mean((reconstructed_tensor_FCTN)**2)
+#reconstructed_tensor_FCTN_squared_magnitude = np.mean((reconstructed_tensor_FCTN)**2)
+reconsturucted_tensor_tucker_als_squared_magnitude = np.mean((reconsturucted_tensor_tucker_als)**2)
 
 
 
@@ -175,9 +202,10 @@ print("DEBUG: ground_truth_squared_magnitude = ", ground_truth_squared_magnitude
 #print("DEBUG: completed_tensor_cross_squared_magnitude      = ", completed_tensor_cross_squared_magnitude)
 
 #print("DEBUG: reconstructed_tensor_sketch_squared_magnitude = ", reconstructed_tensor_sketch_squared_magnitude)
-print("DEBUG: reconstructed_tensor_FCTN_squared_magnitude   = ", reconstructed_tensor_FCTN_squared_magnitude)
-print("DEBUG: mse_ground_truth_FCTN     = ", mse_ground_truth_FCTN)
-print("Power ratio (Rec/GT) = ", reconstructed_tensor_FCTN_squared_magnitude/ground_truth_squared_magnitude)
+#print("DEBUG: reconstructed_tensor_FCTN_squared_magnitude   = ", reconstructed_tensor_FCTN_squared_magnitude)
+#print("DEBUG: mse_ground_truth_FCTN     = ", mse_ground_truth_FCTN)
+print("DEBUG: mse_ground_truth_tucker_als = ", mse_ground_truth_tucker_als)
+print("Power ratio (Rec/GT) = ", reconsturucted_tensor_tucker_als_squared_magnitude/ground_truth_squared_magnitude)
 print("DEBUG: EXEC_TIME (ms) = ", exec_time * (10**(-6)))
 
 

@@ -335,6 +335,7 @@ def generateCrossComponents_modified_experiment2(eval_func, ranges_dict, metric,
 #MAIN FUNCTION====Uses the cross technique (Zhang, 2019) to generate the subtensors (body, arm, joint)========================
 def generateCrossComponents(eval_func, ranges_dict, metric, **kwargs):
 
+    sample_counter = 0 #TODO: delete this (for debug)
     # Obtain the evaluation mode for the machine learning model (prediction, probability or raw score)----------------------------------
     evaluation_mode = 'prediction'
     if 'evaluation_mode' in kwargs.keys():
@@ -393,6 +394,7 @@ def generateCrossComponents(eval_func, ranges_dict, metric, **kwargs):
         for trial in range(eval_trials):
             #print(f'DEBUG: current_hyperparameter_values = \n {current_hyperparameter_values}')
             eval_result_avg += eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)/eval_trials
+            sample_counter += 1
         body[tuple(tensor_index)] = eval_result_avg
 
     # Generate arms and joints------------------------------------------------------------------------------------------------------------
@@ -431,12 +433,14 @@ def generateCrossComponents(eval_func, ranges_dict, metric, **kwargs):
                 eval_result_avg = 0
                 for trial in range(eval_trials):
                     eval_result_avg += eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)/eval_trials
+                    sample_counter += 1
                 arm_matrix[seq, col] = eval_result_avg
             col += 1
 
         arms.append(arm_matrix)
         joints.append(joint_matrix)
-            
+
+    print("DEBUG: sample_counter = ", sample_counter)
     return body, joints, arms
 
 #MAIN FUNCTION====Noiseless reconstruction of the original tensor according to Zhang, 2019=============

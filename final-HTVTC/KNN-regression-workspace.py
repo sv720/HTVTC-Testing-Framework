@@ -9,7 +9,7 @@ import copy
 
 from trainmodels import crossValidationFunctionGenerator
 from loaddata import loadData, trainTestSplit, extractZeroOneClasses, convertZeroOne
-from finalAlgoImplementation import final_HTVTC, exploratory_HTVTC_random_coordinates, exploratory_HTVTC_with_intermediate_ground_truth_eval, exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues, exploratory_HTVTC_with_intermediate_gt_on_best_val_patches, final_HTVTC_TSvMRP, final_HTVTC_FCTN
+from finalAlgoImplementation import final_HTVTC, exploratory_HTVTC_random_coordinates, exploratory_HTVTC_with_intermediate_ground_truth_eval, exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues, exploratory_HTVTC_with_intermediate_gt_on_best_val_patches, final_HTVTC_TSvMRP, final_HTVTC_FCTN, final_HTVTC_FCTN_minmax_feat_scal_norm
 import regressionmetrics
 import classificationmetrics
 
@@ -75,7 +75,8 @@ recommended_combinations = []
 #recommended_combination, history = exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(eval_func=func, ranges_dict=ranges_dict_copy_2, metric=metric, num_best_tc_values_evaluated_at_gt=5, max_completion_cycles=4)
 #recommended_combination, history = exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(eval_func=func, ranges_dict=ranges_dict_copy_2, metric=metric, num_best_tc_values_evaluated_at_gt=5, fraction_true_val_to_trigger_patch=0.5, max_completion_cycles=4)
 #recommended_combination, history = final_HTVTC_TSvMRP(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.13, assumed_rank=1, known_fraction_multiplier=0.6,max_completion_cycles=4)
-recommended_combination, history = final_HTVTC_FCTN(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.17, assumed_rank_max=1, known_fraction_multiplier=0.7,max_completion_cycles=4)
+#recommended_combination, history = final_HTVTC_FCTN(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.17, assumed_rank_max=5, known_fraction_multiplier=0.5,max_completion_cycles=4, maxit_fctn=100)
+recommended_combination, history = final_HTVTC_FCTN_minmax_feat_scal_norm(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.17, assumed_rank_max=5, known_fraction_multiplier=0.43,max_completion_cycles=4, maxit_fctn=100)
 
 #End timer/memory profiler/CPU timer
 result = None

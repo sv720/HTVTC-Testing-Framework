@@ -13,6 +13,16 @@ from crosstechnique import generateCrossComponents, noisyReconstruction
 from sketchtechnique import tensorCompletionSketchingMRP
 from generateerrortensor import generateIncompleteErrorTensor
 import time
+from tensorly.tenalg import multi_mode_dot
+from tensorly import unfold
+
+def apply_random_projections(tensor, projection_matrices, skipped_index=None):
+    """ Apply random projections to each mode of the tensor using multi-mode dot products """
+    
+    projected_tensor = multi_mode_dot(tensor, projection_matrices, skip=skipped_index)
+
+    return projected_tensor
+
 
 task = 'classification'
 data = loadData(source='sklearn', identifier='wine', task=task)
@@ -20,6 +30,8 @@ binary_data = extractZeroOneClasses(data)
 data_split = trainTestSplit(binary_data, method = 'cross_validation')
 func = crossValidationFunctionGenerator(data_split, algorithm='knn-classification', task=task)
 metric = classificationmetrics.indicatorFunction
+
+np.random.seed(1)
 
 ranges_dict = {
         'N': {
@@ -49,7 +61,7 @@ ranges_dict_copy_1 = copy.deepcopy(ranges_dict)
 ranges_dict_copy_2 = copy.deepcopy(ranges_dict)
 ranges_dict_copy_3 = copy.deepcopy(ranges_dict)
 
-#reconstructed_tensor_sketch = tensorCompletionSketchingMRP(eval_func=func, ranges_dict=ranges_dict_copy_1, metric=metric,eval_trials=1, known_fraction=0.1, assumed_rank = 1)
+#
 #sparse_tensor, sampled_indices = generateIncompleteErrorTensor(eval_func=func, ranges_dict=ranges_dict, known_fraction=0.1, metric=metric, eval_trials=1, empty_are = 'zero')
 #print("DEBUG: sparse_tensor.shape = ", sparse_tensor.shape)
 #print("DEBUG: sampled_indices[0] = ", sampled_indices[0])
@@ -110,7 +122,7 @@ ground_truth_tensor = np.array(
 
 #print("DEBUG: ground_truth_tensor.shape = ", ground_truth_tensor.shape)
 sampled_fraction = 0.3
-assumed_rank = 2
+assumed_rank = 1
 print("DEBUG: sampled_fraction = ", sampled_fraction)
 print("DEBUG: assumed_rank = ", assumed_rank)
 mask = np.random.choice([0, 1], size=ground_truth_tensor.shape, p=[1 - sampled_fraction, sampled_fraction])
@@ -135,49 +147,77 @@ sampled_indices = [tuple(idx) for idx in sampled_indices]
 
 
 n_dims = sparse_tensor.ndim
-#max_R = np.ones((n_dims,n_dims))
-max_R = np.full((n_dims, n_dims), assumed_rank)
-#print("DEBUG: n_dims = ", n_dims)
-#print("DEBUG: sparse_tensor.shape = ", sparse_tensor.shape)
-#print("DEBUG: max_R = ", max_R)
+
+sparse_tensor, _ = generateIncompleteErrorTensor(eval_func=func, ranges_dict=ranges_dict, known_fraction=sampled_fraction, metric=metric, eval_trials=1, empty_are = 'gaussian')
+
 start_time = time.perf_counter_ns()
-reconstructed_tensor_FCTN, _ = FCTN_TC(sparse_tensor, sampled_indices, max_R = max_R, maxit=1000)
+
+#START TIMED CODE
+    
+full_sketch_projection_dims = sparse_tensor.ndim*[assumed_rank]
+
+
+num_modes = sparse_tensor.ndim
+
+projection_matrices = [np.transpose(np.random.randn(sparse_tensor.shape[mode], full_sketch_projection_dims[mode])) for mode in range(num_modes)]
+
+full_sketch_projected_tensor = apply_random_projections(tensor=sparse_tensor, projection_matrices=projection_matrices, skipped_index=None)
+
+small_sketch_projected_tensors = [] #can be removed
+B_matrices = []
+for index_dropped in range(len(full_sketch_projection_dims)):
+    small_sketch_projected_tensor = apply_random_projections(tensor=sparse_tensor, projection_matrices=projection_matrices, skipped_index=index_dropped)
+    small_sketch_projected_tensors.append(small_sketch_projected_tensor)
+    n_mode_matricization_small_sketch_projected_tensor = unfold(tensor=small_sketch_projected_tensor, mode=index_dropped)
+    n_mode_matricization_full_sketch_projected_tensor = unfold(tensor=full_sketch_projected_tensor, mode=index_dropped)
+    # Calculate the Moore–Penrose pseudo-inverse of the matricized form
+    pseudo_inverse_full_sketch_n_mode_matricization = np.linalg.pinv(n_mode_matricization_full_sketch_projected_tensor)
+    B_matrix = np.dot(n_mode_matricization_small_sketch_projected_tensor, pseudo_inverse_full_sketch_n_mode_matricization)
+    
+    B_matrices.append(B_matrix)
+
+reconstructed_tensor_sketch = multi_mode_dot(full_sketch_projected_tensor, B_matrices)
+
+
+#reconstructed_tensor_sketch = tensorCompletionSketchingMRP(eval_func=func, ranges_dict=ranges_dict_copy_1, metric=metric,eval_trials=1, known_fraction=sampled_fraction, assumed_rank = assumed_rank)
+
+#END TIMED CODE
+
 end_time = time.perf_counter_ns()
 exec_time = end_time - start_time
-ground_truth_tensor, _ = generateIncompleteErrorTensor(eval_func=func, ranges_dict=ranges_dict_copy_2, known_fraction=1, metric=metric, eval_trials=1)
 
-#mse_ground_truth_sketch = np.mean((ground_truth_tensor - reconstructed_tensor_sketch)**2)
+
+ground_truth_tensor, _ = generateIncompleteErrorTensor(eval_func=func, ranges_dict=ranges_dict_copy_2, known_fraction=1, metric=metric, eval_trials=1) #same as assignment above
+
+mse_ground_truth_sketch = np.mean((ground_truth_tensor - reconstructed_tensor_sketch)**2)
+
+#print("ground_truth_tensor = \n ", ground_truth_tensor)
+#print("completed_tensor_cross = \n ", completed_tensor_cross)
+
+print("DEBUG: ground_truth_tensor.mean() = ", ground_truth_tensor.mean())
+print("DEBUG: reconstructed_tensor_sketch.mean() = ", reconstructed_tensor_sketch.mean())
+#print("DEBUG: completed_tensor_cross.mean() = ", completed_tensor_cross.mean())
+
 #mse_sparse_tensor = np.mean((sparse_tensor - reconstructed_tensor)**2)
 
-#body, joints, arms = generateCrossComponents(eval_func=func, ranges_dict=ranges_dict_copy_3, metric=metric, eval_trials=1)
-#completed_tensor_cross = noisyReconstruction(body, joints, arms)
 
-#mse_ground_truth_cross = np.mean((ground_truth_tensor - completed_tensor_cross.reshape(11, 2, 1, 11))**2)
 
-mse_ground_truth_FCTN = np.mean((ground_truth_tensor - reconstructed_tensor_FCTN)**2)
+#mse_ground_truth_cross = np.mean((ground_truth_tensor - completed_tensor_cross.reshape(11,2,1,11))**2)
+
+#mse_ground_truth_FCTN = np.mean((ground_truth_tensor - reconstructed_tensor_FCTN)**2)
 ground_truth_squared_magnitude = np.mean((ground_truth_tensor)**2)
 #print("DEBUG: reconstructed_tensor_sketch.shape = \n ", reconstructed_tensor_sketch.shape)
 #print("DEBUG: ground_truth_tensor         = \n ",ground_truth_tensor)
 #print("DEBUG: completed_tensor_cross.shape      = \n", completed_tensor_cross.shape)
 #print("DEBUG: reconstructed_tensor_FCTN   = \n ", reconstructed_tensor_FCTN)
 
-#completed_tensor_cross_squared_magnitude = np.mean((completed_tensor_cross)**2)
-#reconstructed_tensor_sketch_squared_magnitude = np.mean((reconstructed_tensor_sketch)**2)
-reconstructed_tensor_FCTN_squared_magnitude = np.mean((reconstructed_tensor_FCTN)**2)
+reconstructed_tensor_sketch_squared_magnitude = np.mean((reconstructed_tensor_sketch)**2)
 
-
-
-
-#print("DEBUG: mse_ground_truth_sketch   = ", mse_ground_truth_sketch)
-#print("DEBUG: mse_ground_truth_cross    = ", mse_ground_truth_cross)
 
 print("DEBUG: ground_truth_squared_magnitude = ", ground_truth_squared_magnitude)
-#print("DEBUG: completed_tensor_cross_squared_magnitude      = ", completed_tensor_cross_squared_magnitude)
-
-#print("DEBUG: reconstructed_tensor_sketch_squared_magnitude = ", reconstructed_tensor_sketch_squared_magnitude)
-print("DEBUG: reconstructed_tensor_FCTN_squared_magnitude   = ", reconstructed_tensor_FCTN_squared_magnitude)
-print("DEBUG: mse_ground_truth_FCTN     = ", mse_ground_truth_FCTN)
-print("Power ratio (Rec/GT) = ", reconstructed_tensor_FCTN_squared_magnitude/ground_truth_squared_magnitude)
+print("DEBUG: reconstructed_tensor_sketch_squared_magnitude = ", reconstructed_tensor_sketch_squared_magnitude)
+print("DEBUG: mse_ground_truth_sketch    = ", mse_ground_truth_sketch)
+print("Power ratio (Rec/GT) = ", reconstructed_tensor_sketch_squared_magnitude/ground_truth_squared_magnitude)
 print("DEBUG: EXEC_TIME (ms) = ", exec_time * (10**(-6)))
 
 

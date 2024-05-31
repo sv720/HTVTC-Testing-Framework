@@ -7,7 +7,7 @@ from trainmodels import crossValidationFunctionGenerator
 from loaddata import loadData, trainTestSplit, extractZeroOneClasses, convertZeroOne
 import copy
 import classificationmetrics
-from FCTNtechnique import FCTN_TC
+from FCTNtechnique import FCTN_TC_minmax_feat_scal_norm
 import numpy as np
 from crosstechnique import generateCrossComponents, noisyReconstruction
 from sketchtechnique import tensorCompletionSketchingMRP
@@ -141,7 +141,7 @@ max_R = np.full((n_dims, n_dims), assumed_rank)
 #print("DEBUG: sparse_tensor.shape = ", sparse_tensor.shape)
 #print("DEBUG: max_R = ", max_R)
 start_time = time.perf_counter_ns()
-reconstructed_tensor_FCTN, _ = FCTN_TC(sparse_tensor, sampled_indices, max_R = max_R, maxit=1000)
+reconstructed_tensor_FCTN, _ = FCTN_TC_minmax_feat_scal_norm(sparse_tensor, sampled_indices, max_R = max_R, maxit=1000)
 end_time = time.perf_counter_ns()
 exec_time = end_time - start_time
 ground_truth_tensor, _ = generateIncompleteErrorTensor(eval_func=func, ranges_dict=ranges_dict_copy_2, known_fraction=1, metric=metric, eval_trials=1)
