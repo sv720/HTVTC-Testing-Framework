@@ -52,20 +52,24 @@ def pyten_TC(sparse_tensor, function_name, r=20, tol=1e-4, maxiter=100, init='ra
             #print('DEBUG: tol = ', tol)
             [Final, Rec] = pyten.method.tucker_als(X, r, omega, tol, maxiter, init, printitn)
             full = Final.totensor()
+            Final_tensor_real = np.real(Final.totensor().data)
         elif function_name == '2' or function_name == 'cp_als':
             #print("DEBUG: X.shape = ", X.shape)
             #print("DEBUG: r = ", r)
             [Final, Rec] = pyten.method.cp_als(X, r, omega, tol, maxiter, init, printitn)
             full = Final.totensor()
+            Final_tensor_real = np.real(Final.totensor().data)
         elif function_name == '3' or function_name == 'TNCP':
             Omega1 = pyten.tenclass.Tensor(omega)
-            NNCP = pyten.method.TNCP(X, Omega1, r, tol, maxiter)
+            X_pyten_tenclass_Tensor = pyten.tenclass.Tensor(X.data)
+            NNCP = pyten.method.TNCP(X_pyten_tenclass_Tensor, Omega1, r, tol, maxiter)
             NNCP.run()
             Final = NNCP.U
             Rec = NNCP.X
             full = NNCP.II.copy()
             for i in range(NNCP.ndims):
                 full = full.ttm(NNCP.U[i], i + 1)
+            Final_tensor_real = Rec.data
         elif function_name == '4' or function_name == 'SiLRTC':
             Rec = pyten.method.silrtc(X, omega, max_iter=maxiter, printitn=printitn)
             full = None
@@ -181,6 +185,7 @@ def pyten_TC(sparse_tensor, function_name, r=20, tol=1e-4, maxiter=100, init='ra
             # newvals.append(list(tempvals(idx)));
         df.to_csv(newfilename, sep=';', index=0)
     """
-    Final_tensor_real = np.real(Final.totensor().data)
+
+    
     return Final_tensor_real
 
