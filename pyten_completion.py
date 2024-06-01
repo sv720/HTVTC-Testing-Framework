@@ -18,10 +18,11 @@ from tensorly import unfold
 import pyten
 import pandas as pd
 
-def pyten_TC(sparse_tensor, function_name, r=2, tol=1e-8, maxiter=100, init='random', omega=None, recover=None, printitn=0):
+def pyten_TC(sparse_tensor, function_name, r=20, tol=1e-4, maxiter=100, init='random', omega=None, recover=None, printitn=0):
     subs = list(np.ndindex(sparse_tensor.shape))
     vals = np.array([sparse_tensor[idx] for idx in subs])
-    #print("DEBUG: vals.shape = ", vals.shape)
+
+
 
     vals=vals.reshape(vals.shape[0], 1)
 
@@ -52,6 +53,8 @@ def pyten_TC(sparse_tensor, function_name, r=2, tol=1e-8, maxiter=100, init='ran
             [Final, Rec] = pyten.method.tucker_als(X, r, omega, tol, maxiter, init, printitn)
             full = Final.totensor()
         elif function_name == '2' or function_name == 'cp_als':
+            #print("DEBUG: X.shape = ", X.shape)
+            #print("DEBUG: r = ", r)
             [Final, Rec] = pyten.method.cp_als(X, r, omega, tol, maxiter, init, printitn)
             full = Final.totensor()
         elif function_name == '3' or function_name == 'TNCP':
@@ -79,6 +82,7 @@ def pyten_TC(sparse_tensor, function_name, r=2, tol=1e-8, maxiter=100, init='ran
             X1 = [X.data]
             multi = input("Please input how many other multiset files you want to couple with the first one "
                                 "(Input 'None' if no other info.) \n")
+            """
             if multi != 'None':
                 for i in range(int(multi)):
                     FileName2 = input(
@@ -106,6 +110,7 @@ def pyten_TC(sparse_tensor, function_name, r=2, tol=1e-8, maxiter=100, init='ran
                 print(X1[1].shape)
                 print(X1[2].shape)
                 print("\n")
+            """
             parafac = pyten.method.PARAFAC2(X1, r, maxiter=maxiter, printitn=printitn)
             parafac.run()
             Ori = parafac.X
