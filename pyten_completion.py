@@ -71,17 +71,23 @@ def pyten_TC(sparse_tensor, function_name, r=20, tol=1e-4, maxiter=100, init='ra
                 full = full.ttm(NNCP.U[i], i + 1)
             Final_tensor_real = Rec.data
         elif function_name == '4' or function_name == 'SiLRTC':
-            Rec = pyten.method.silrtc(X, omega, max_iter=maxiter, printitn=printitn)
+            #DIDN'T GET TO WORK:
+            X_pyten_tenclass_Tensor = pyten.tenclass.Tensor(X.data)
+            Rec = pyten.method.silrtc(X_pyten_tenclass_Tensor, omega, max_iter=maxiter, printitn=printitn)
             full = None
             Final = None
         elif function_name == '5' or function_name == 'FaLRTC':
-            Rec = pyten.method.falrtc(X, omega, max_iter=maxiter, printitn=printitn)
+            X_pyten_tenclass_Tensor = pyten.tenclass.Tensor(X.data)
+            Rec = pyten.method.falrtc(X_pyten_tenclass_Tensor, omega, max_iter=maxiter, printitn=printitn)
             full = None
             Final = None
+            Final_tensor_real = Rec.data
         elif function_name == '6' or function_name == 'HaLRTC':
             Rec = pyten.method.halrtc(X, omega, max_iter=maxiter, printitn=printitn)
+            #print("DEBUG: Rec.data = \n ", Rec.data)
             full = None
             Final = None
+            Final_tensor_real = Rec.data
         elif function_name == '7' or function_name == 'PARAFAC2':
             X1 = [X.data]
             multi = input("Please input how many other multiset files you want to couple with the first one "
@@ -152,9 +158,9 @@ def pyten_TC(sparse_tensor, function_name, r=20, tol=1e-4, maxiter=100, init='ra
             # print(Ori)
             # print("\n" + "The Decomposed Result is: ")
             # print(Final)
-        else:
-            newsubs = full.tosptensor().subs
-            tempvals = full.tosptensor().vals
+        #else:
+            #newsubs = full.tosptensor().subs
+            #tempvals = full.tosptensor().vals
             # newfilename = file_name[:-4] + '_Decomposite' + file_name[-4:]
             #print("\n" + "The original Tensor is: ")
             #print(Ori)

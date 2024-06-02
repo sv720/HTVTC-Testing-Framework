@@ -5,7 +5,8 @@ sys.path.insert(1, p)
 
 from trainmodels import crossValidationFunctionGenerator
 from loaddata import loadData, trainTestSplit, extractZeroOneClasses, convertZeroOne
-from finalAlgoImplementation import final_HTVTC, exploratory_HTVTC_with_intermediate_ground_truth_eval, exploratory_HTVTC_with_intermediate_gt_on_best_val_patches, final_HTVTC_TSvMRP, final_HTVTC_FCTN, final_HTVTC_FCTN_minmax_feat_scal_norm, final_HTVTC_Tucker_ALS, final_HTVTC_CP_ALS, final_HTVTC_TNCP
+from finalAlgoImplementation import final_HTVTC, exploratory_HTVTC_with_intermediate_ground_truth_eval, exploratory_HTVTC_with_intermediate_gt_on_best_val_patches, final_HTVTC_TSvMRP, final_HTVTC_FCTN, final_HTVTC_FCTN_minmax_feat_scal_norm, final_HTVTC_Tucker_ALS, final_HTVTC_CP_ALS, final_HTVTC_TNCP ,final_HTVTC_FaLRTC,final_HTVTC_HaLRTC
+#final_HTVTC_SiLRTC, 
 import regressionmetrics
 import copy
 import classificationmetrics
@@ -74,7 +75,9 @@ ranges_dict = {
 #recommended_combination, history = final_HTVTC_FCTN_minmax_feat_scal_norm(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.1, assumed_rank_max=5, known_fraction_multiplier=1,max_completion_cycles=5, maxit_fctn=100)
 #recommended_combination, history = final_HTVTC_Tucker_ALS(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.1, assumed_rank=2, known_fraction_multiplier=0.78, max_completion_cycles=5, maxit_fctn=100)
 #recommended_combination, history = final_HTVTC_CP_ALS(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.1, assumed_rank=2, known_fraction_multiplier=1, max_completion_cycles=5, tol=1e-1, maxit_fctn=100)
-recommended_combination, history = final_HTVTC_TNCP(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.1, assumed_rank=5, known_fraction_multiplier=1, max_completion_cycles=5, maxit_fctn=100)
+#recommended_combination, history = final_HTVTC_TNCP(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.1, assumed_rank=5, known_fraction_multiplier=1, max_completion_cycles=5, maxit_fctn=100)
+#recommended_combination, history = final_HTVTC_FaLRTC(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.1, assumed_rank=2, known_fraction_multiplier=1, max_completion_cycles=5, maxit_fctn=100)
+recommended_combination, history = final_HTVTC_HaLRTC(eval_func=func, ranges_dict=ranges_dict, metric=metric, initial_known_fraction=0.1, assumed_rank=1, known_fraction_multiplier=1, max_completion_cycles=5, maxit_fctn=100)
 
 
 #End timer/memory profiler/CPU timer
