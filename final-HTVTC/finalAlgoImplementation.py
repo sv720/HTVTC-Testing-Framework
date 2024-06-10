@@ -446,16 +446,16 @@ def exploratory_HTVTC_with_intermediate_ground_truth_eval_on_bestvalues(ranges_d
 
         evaluation_mode = 'prediction'
 
-        print(f'DEBUG: completed_tensor.size = {completed_tensor.size}')
+        #print(f'DEBUG: completed_tensor.size = {completed_tensor.size}')
 
         true_value_list = []
         for i in range(len(combinations_tc_infered)):
-            print(f'DEBUG: i = {i}')
+            #print(f'DEBUG: i = {i}')
             current_hyperparameter_values = combinations_tc_infered[i]
             true_value_at_coord = eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)
             true_value_list.append(true_value_at_coord)
-            print(f'DEBUG: tc_infered_value_at_coord    = {bestValues_TC_Infered["values"][i]} ')
-            print(f'DEBUG: true_value_at_coord          = {true_value_at_coord}')
+            #print(f'DEBUG: tc_infered_value_at_coord    = {bestValues_TC_Infered["values"][i]} ')
+            #print(f'DEBUG: true_value_at_coord          = {true_value_at_coord}')
 
 
         
@@ -512,7 +512,7 @@ The idea here is that if there is a large difference between the true value and 
 the candidate point
 
 '''
-def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval_func, metric, num_best_tc_values_evaluated_at_gt, fraction_true_val_to_trigger_patch=0.5, **kwargs):
+def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval_func, metric, num_best_tc_values_evaluated_at_gt, fraction_true_val_to_trigger_patch=0.5, number_intervals_in_patch = 1,  number_of_steps_in_patch = 2,   **kwargs):
 
     # Deal with kwargs that are not passed into tensor generation------------------------------------------------------
     kwargskeys = kwargs.keys()
@@ -605,9 +605,9 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
                 for key in patch_ranges_dict:
                     if patch_ranges_dict[key]['type'] == 'INTEGER':
                         if key != 'min_samples_split':
-                            patch_ranges_dict[key]['start'] = max(1.0, current_hyperparameter_values[key] - patch_ranges_dict[key]['interval']//2)
-                            patch_ranges_dict[key]['end'] = max(1.0, current_hyperparameter_values[key] + patch_ranges_dict[key]['interval']//2)
-                            patch_ranges_dict[key]['interval'] = max(1.0, patch_ranges_dict[key]['interval']//2)
+                            patch_ranges_dict[key]['start'] = max(1.0, current_hyperparameter_values[key] - (number_intervals_in_patch*patch_ranges_dict[key]['interval'])//2)
+                            patch_ranges_dict[key]['end'] = max(1.0, current_hyperparameter_values[key] + (number_intervals_in_patch*patch_ranges_dict[key]['interval'])//2)
+                            patch_ranges_dict[key]['interval'] = max(1.0, (number_intervals_in_patch*patch_ranges_dict[key]['interval'])//(number_of_steps_in_patch))
 
                 #print("DEBUG: NEW patch_ranges_dict = \n", patch_ranges_dict)
 
@@ -634,7 +634,8 @@ def exploratory_HTVTC_with_intermediate_gt_on_best_val_patches(ranges_dict, eval
                 # true_value_in_patch = eval_func(**current_hyperparameter_values, metric=metric, evaluation_mode=evaluation_mode)
 
                 print('==================')
-
+            else: 
+                value_list = value_lists_tc_infered
         index_of_best_ground_truth_value = true_value_list.index(min(true_value_list)) #TODO: check if this should rly be a max and not a min?!?!
 
         selected_combination = combinations_tc_infered[index_of_best_ground_truth_value]

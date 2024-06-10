@@ -1,7 +1,7 @@
 import os, sys
 p = os.path.abspath('..')
 sys.path.insert(1, p)
-sys.path.append('/home/scott/Imperial/Year4/FYP/pyten')
+sys.path.append('pyten')
 
 from trainmodels import crossValidationFunctionGenerator
 from loaddata import loadData, trainTestSplit, extractZeroOneClasses, convertZeroOne
